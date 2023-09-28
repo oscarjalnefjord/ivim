@@ -9,7 +9,7 @@ The `ivim` python package provides functionality for the main steps associated w
 The file formats used are the ones used by [FSL](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FSL), i.e. .nii.gz for image data, .bval for b-values and .bvec for diffusion encoding directions. File with ending .cval is also used for c-values in analogy to .bval for b-values to describe flow encoding.
 
 ## Dependencies
-The `ivim` python package relies heavly on numpy for numerical operations, uses nibabel for reading and writing nifti file, and uses scipy for some specific minimization/optimization tasks. A python version >= 3.10 in required.
+The `ivim` python package relies heavly on numpy for numerical operations, uses nibabel for reading and writing nifti file, and uses scipy for some specific minimization/optimization tasks. A python version >= 3.10 is required.
 
 The correction for susceptibility and eddy current induced distorsions wraps FSL functionality, thus requiring [FSL](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FSL) to be installed.
 
