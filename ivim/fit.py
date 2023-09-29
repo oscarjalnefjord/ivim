@@ -114,7 +114,7 @@ def nlls(im_file: str, bval_file: str, regime: str, roi_file: str | None = None,
 
 def seg(im_file: str, bval_file: str, regime: str, bthr: float = 200, roi_file: str | None = None, outbase: str | None = None, verbose: bool = False, fitK: bool = False, cval_file: str | None = None, cthr: float = 0) -> None:
     """
-    Segmented fitting of the IVIM model some regime.
+    Segmented fitting of the IVIM model different regimes.
 
     Arguments:
     im_file   -- path to nifti image file
@@ -368,7 +368,7 @@ def seg(im_file: str, bval_file: str, regime: str, bthr: float = 200, roi_file: 
 
 def bayes(im_file: str, bval_file: str, regime: str, roi_file: str | None = None, outbase: str | None = None, verbose: bool = False, fitK: bool = False, spatial_prior: bool = False, n: int = 2000, burns: int = 1000, ctm: str = 'mean', cval_file: str | None = None):
     """
-    Bayesian fitting of the IVIM model in the ballistic regime (f, D and vd, and possibly K)
+    Bayesian fitting of the IVIM model in different regimes
 
     Arguments:
     im_file       -- path to nifti image file
