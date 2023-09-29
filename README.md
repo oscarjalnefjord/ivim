@@ -2,6 +2,7 @@
 
 [![tests passing](https://github.com/oscarjalnefjord/ivim/actions/workflows/tests.yml/badge.svg)](https://github.com/oscarjalnefjord/ivim/actions)
 [![codecov](https://codecov.io/gh/oscarjalnefjord/ivim/graph/badge.svg?token=V7LGUH6ZVP)](https://codecov.io/gh/oscarjalnefjord/ivim)
+[![Documentation Status](https://readthedocs.org/projects/ivim/badge/?version=latest)](https://ivim.readthedocs.io/en/latest/?badge=latest)
 
 The `ivim` python package provides functionality for the main steps associated with IVIM analysis of diffusion MRI data including:
 - Methods for IVIM parameter estimation / model fitting
