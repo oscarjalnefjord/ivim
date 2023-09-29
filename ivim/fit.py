@@ -8,21 +8,21 @@ from ivim.constants import Db
 from ivim.misc import halfSampleMode
 from ivim.io.base import data_from_file, file_from_data, read_im
 
-""" Base functions for parameter estimation."""
+""" Functions for IVIM parameter estimation. """
 
 def nlls(im_file: str, bval_file: str, regime: str, roi_file: str | None = None, outbase: str | None = None, verbose: bool = False, fitK: bool = False, cval_file: str | None = None) -> None:
     """
     NLLS fitting of the IVIM model different regimes.
 
     Arguments:
-    im_file   -- path to nifti image file
-    bval_file -- path to .bval file
-    regime    -- IVIM regime to model: no (= sIVIM), diffusive (long encoding time) or ballistic (short encoding time)
-    roi_file  -- (optional) path to nifti file defining a region-of-interest (ROI) from with data is extracted
-    outbase   -- (optional) basis for output filenames to which e.g. '_D.nii.gz' is added 
-    verbose   -- (optional) if True, diagnostics during fitting is printet to terminal
-    fitK      -- (optional) if True, the kurtosis signal representation is used instead of a monoexponential one in the first step
-    cval_file -- (optional) path to .cval file
+        im_file:   path to nifti image file
+        bval_file: path to .bval file
+        regime:    IVIM regime to model: no (= sIVIM), diffusive (long encoding time) or ballistic (short encoding time)
+        roi_file:  (optional) path to nifti file defining a region-of-interest (ROI) from with data is extracted
+        outbase:   (optional) basis for output filenames to which e.g. '_D.nii.gz' is added 
+        verbose:   (optional) if True, diagnostics during fitting is printet to terminal
+        fitK:      (optional) if True, the kurtosis signal representation is used instead of a monoexponential one in the first step
+        cval_file: (optional) path to .cval file
     """
 
     check_regime(regime)
@@ -117,16 +117,16 @@ def seg(im_file: str, bval_file: str, regime: str, bthr: float = 200, roi_file: 
     Segmented fitting of the IVIM model different regimes.
 
     Arguments:
-    im_file   -- path to nifti image file
-    bval_file -- path to .bval file
-    regime    -- IVIM regime to model: no (= sIVIM), diffusive (long encoding time) or ballistic (short encoding time)
-    bthr      -- (optional) threshold b-value from which signal is included in first fitting step
-    roi_file  -- (optional) path to nifti file defining a region-of-interest (ROI) from with data is extracted
-    outbase   -- (optional) basis for output filenames to which e.g. '_D.nii.gz' is added 
-    verbose   -- (optional) if True, diagnostics during fitting is printet to terminal
-    fitK      -- (optional) if True, the kurtosis signal representation is used instead of a monoexponential one in the first step
-    cval_file -- (optional) path to .cval file
-    cthr      -- (optional) threshold c-value from above which signal is included in first fitting step
+        im_file:   path to nifti image file
+        bval_file: path to .bval file
+        regime:    IVIM regime to model: no (= sIVIM), diffusive (long encoding time) or ballistic (short encoding time)
+        bthr:      (optional) threshold b-value from which signal is included in first fitting step
+        roi_file:  (optional) path to nifti file defining a region-of-interest (ROI) from with data is extracted
+        outbase:   (optional) basis for output filenames to which e.g. '_D.nii.gz' is added 
+        verbose:   (optional) if True, diagnostics during fitting is printet to terminal
+        fitK:      (optional) if True, the kurtosis signal representation is used instead of a monoexponential one in the first step
+        cval_file: (optional) path to .cval file
+        cthr:      (optional) threshold c-value from above which signal is included in first fitting step
     """
 
     def _monoexp(Y: npt.NDArray[np.float64], b: npt.NDArray[np.float64], lim: list = [0, 3e-3], validate: bool = True, verbose: bool = False) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
@@ -371,18 +371,18 @@ def bayes(im_file: str, bval_file: str, regime: str, roi_file: str | None = None
     Bayesian fitting of the IVIM model in different regimes
 
     Arguments:
-    im_file       -- path to nifti image file
-    bval_file     -- path to .bval file
-    regime        -- IVIM regime to model: no (= sIVIM), diffusive (long encoding time) or ballistic (short encoding time)
-    roi_file      -- (optional) path to nifti file defining a region-of-interest (ROI) from with data is extracted
-    outbase       -- (optional) basis for output filenames to which e.g. '_D.nii.gz' is added 
-    verbose       -- (optional) if True, diagnostics during fitting is printet to terminal
-    fitK          -- (optional) if True, the kurtosis signal representation is used instead of a monoexponential one in the first step
-    spatial_prior -- (optional) if True, a spatial prior enforcing similary between 4-neighbours is applied 
-    n             -- (optional) number of Markov Chain Monte Carlo (MCMC) iterations
-    burns         -- (optional) number of MCMC iterations before sampling
-    ctm           -- (optional) central tendency measure (mean or mode) used to summarize the posterior parameter distributions
-    cval_file     -- (optional) path to .cval file
+        im_file:       path to nifti image file
+        bval_file:     path to .bval file
+        regime:        IVIM regime to model: no (= sIVIM), diffusive (long encoding time) or ballistic (short encoding time)
+        roi_file:      (optional) path to nifti file defining a region-of-interest (ROI) from with data is extracted
+        outbase:       (optional) basis for output filenames to which e.g. '_D.nii.gz' is added 
+        verbose:       (optional) if True, diagnostics during fitting is printet to terminal
+        fitK:          (optional) if True, the kurtosis signal representation is used instead of a monoexponential one in the first step
+        spatial_prior: (optional) if True, a spatial prior enforcing similary between 4-neighbours is applied 
+        n:             (optional) number of Markov Chain Monte Carlo (MCMC) iterations
+        burns:         (optional) number of MCMC iterations before sampling
+        ctm:           (optional) central tendency measure (mean or mode) used to summarize the posterior parameter distributions
+        cval_file:     (optional) path to .cval file
     """
 
     def _estimation(fn, Y, X, P0, lims, n=500, burns=500, ctm='mean', spatial_prior = False, roi=None, verbose=False):
