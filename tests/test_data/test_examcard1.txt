@@ -1,0 +1,8 @@
+Diffusion mode =		"DTI";
+    gradient expert mode =	"yes";
+        gradient control =	"+free waveform";
+       +WF shape Pre =		"Custom005";
+       +WF shape Post =		"Custom006";
+       +WF dur. Pre (ms) =	20;
+       +WF dur. Post (ms) =	20;
+       +Target pause dur. (ms) =	10;

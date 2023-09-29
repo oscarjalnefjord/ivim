@@ -1,0 +1,6 @@
+Diffusion mode =		"DTI";
+        gradient control =	"+free waveform";
+       +WF shape Pre =		"Custom005";
+       +WF shape Post =		"Custom005";
+       +WF dur. Both (ms) =	20;
+       +Target pause dur. (ms) =	10;
