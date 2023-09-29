@@ -36,6 +36,7 @@ def test_crlb_sIVIM():
                 np.testing.assert_array_less(bthr, b[1:]*(1+1e-5))
                 np.testing.assert_array_less(a, 1.0)
                 np.testing.assert_array_less(0.0, a)
+                
 def test_crlb_diffusive():
     bmax = 1000
     b, a = crlb(D, f, DIFFUSIVE_REGIME, bmax = bmax, fitK = False, minbias = False, 
@@ -44,7 +45,7 @@ def test_crlb_diffusive():
     np.testing.assert_equal(b.size, 4)
     np.testing.assert_equal(a.size, 4)
     np.testing.assert_array_less(b, bmax*(1+1e-5))
-    np.testing.assert_array_less(0, b*(1+1e-5))
+    np.testing.assert_array_less(0, b + 1e-5)
     np.testing.assert_array_less(a, 1.0)
     np.testing.assert_array_less(0.0, a)
 

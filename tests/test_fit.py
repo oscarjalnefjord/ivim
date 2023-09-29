@@ -202,7 +202,7 @@ def test_bayes_sIVIM():
                 bayes(im_file, bval_file, NO_REGIME, roi_file = roi_file, outbase = outbase, fitK = fitK, n = mcmc_n, ctm = ctm, spatial_prior = spatial_prior)
                 for test_par in test_pars:
                     np.testing.assert_allclose(read_im(outbase + f'_{test_par}.nii.gz')[roi], parmaps[test_par][roi], rtol = rtol, atol = atol[test_par])
-
+                
 def test_bayes_diffusive():
     for spatial_prior in [True, False]:
         for ctm in ['mean', 'mode']:
