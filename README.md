@@ -1,6 +1,7 @@
 # `ivim` - An end-to-end python package for intravoxel incoherent motion (IVIM) analysis of diffusion MRI data
 
 [![tests passing](https://github.com/oscarjalnefjord/ivim/actions/workflows/tests.yml/badge.svg)](https://github.com/oscarjalnefjord/ivim/actions)
+[![codecov](https://codecov.io/gh/oscarjalnefjord/ivim/graph/badge.svg?token=V7LGUH6ZVP)](https://codecov.io/gh/oscarjalnefjord/ivim)
 
 The `ivim` python package provides functionality for the main steps associated with IVIM analysis of diffusion MRI data including:
 - Methods for IVIM parameter estimation / model fitting
