@@ -1,8 +1,7 @@
-import numpy as np
-from scipy.optimize import minimize
-from scipy.spatial.distance import mahalanobis
-import json
+""" Methods for correcting for signal drift. """
 
+import numpy as np
+import json
 from ivim.io.base import data_from_file, file_from_data, read_im
 
 def temporal(im_file: str, bval_file: str, outbase: str, roi_file: str | None = None, order: int = 2, ctm: str = 'mean', voxelwise: bool = False) -> None:
@@ -10,13 +9,13 @@ def temporal(im_file: str, bval_file: str, outbase: str, roi_file: str | None = 
     Correct for temporal signal drift by fitting a polynomial in time.
 
     Arguments:
-    im_file   -- path to nifti image file
-    bval_file -- path to .bval file
-    outbase   -- basis for output filenames, i.e. filename without file extension to which .nii.gz, .bval, etc. is added
-    roi_file  -- (optional) path to nifti file defining a region-of-interest (ROI) in which the correction is calculated and applied
-    order     -- (optional) order of estimated polynomial (1 or 2)
-    ctm       -- (optional) central tendency measure used to summarize the signal in the ROI, 'mean' or 'median'
-    voxelwise -- (optional) if True, one polynomial is fitted for each voxel, else one polynomial for the mean/median signal in the ROI
+        im_file:   path to nifti image file
+        bval_file: path to .bval file
+        outbase:   basis for output filenames, i.e. filename without file extension to which .nii.gz, .bval, etc. is added
+        roi_file:  (optional) path to nifti file defining a region-of-interest (ROI) in which the correction is calculated and applied
+        order:     (optional) order of estimated polynomial (1 or 2)
+        ctm:       (optional) central tendency measure used to summarize the signal in the ROI, 'mean' or 'median'
+        voxelwise: (optional) if True, one polynomial is fitted for each voxel, else one polynomial for the mean/median signal in the ROI
 
     The correction follows the algorithm described by Vos et al. "The Importance of 
     Correcting for Signal Drift in Diffusion MRI"

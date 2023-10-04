@@ -1,8 +1,8 @@
+""" Functions to generate MR signal and corresponding Jacobians based on IVIM parameters. """
+
 import numpy as np
 import numpy.typing as npt
 from ivim.constants import Db
-
-""" Functions to generate MR signal and corresponding Jacobians based on IVIM parameters. """
 
 NO_REGIME = 'no'
 DIFFUSIVE_REGIME = 'diffusive'
@@ -13,11 +13,11 @@ def monoexp(b: npt.NDArray[np.float64], D: npt.NDArray[np.float64]) -> npt.NDArr
     Return the monoexponential e^(-b*D).
     
     Arguments:
-    b -- vector of b-values [s/mm2]
-    D -- ND array of diffusion coefficients [mm2/s]
+        b: vector of b-values [s/mm2]
+        D: ND array of diffusion coefficients [mm2/s]
 
     Output:
-    S -- (N+1)D array of signal values
+        S: (N+1)D array of signal values
     """
 
     [b, D] = at_least_1d([b, D])
@@ -29,12 +29,12 @@ def kurtosis(b: npt.NDArray[np.float64], D: npt.NDArray[np.float64], K: npt.NDAr
     Return the kurtosis signal representation.
     
     Arguments: 
-    b -- vector of b-values [s/mm2]
-    D -- ND array of diffusion coefficients [mm2/s]
-    K -- ND array of kurtosis coefficients (same shape as D or scalar)
+        b: vector of b-values [s/mm2]
+        D: ND array of diffusion coefficients [mm2/s]
+        K: ND array of kurtosis coefficients (same shape as D or scalar)
 
     Output:
-    S -- (N+1)D array of signal values
+        S: (N+1)D array of signal values
     """
     
     [b, D, K] = at_least_1d([b, D, K])
@@ -47,14 +47,14 @@ def sIVIM(b: npt.NDArray[np.float64], D: npt.NDArray[np.float64], f: npt.NDArray
     Return MR signal based on the simplified IVIM (sIVIM) model.
     
     Arguments: 
-    b  -- vector of b-values [s/mm2]
-    D  -- ND array of diffusion coefficients [mm2/s]
-    f  -- ND array of perfusion fractions (same shape as D or scalar)
-    S0 -- (optional) ND array of signal values at b == 0 (same shape as D or scalar)
-    K  -- (optional) ND array of kurtosis coefficients (same shape as D or scalar)
+        b:  vector of b-values [s/mm2]
+        D:  ND array of diffusion coefficients [mm2/s]
+        f:  ND array of perfusion fractions (same shape as D or scalar)
+        S0: (optional) ND array of signal values at b == 0 (same shape as D or scalar)
+        K:  (optional) ND array of kurtosis coefficients (same shape as D or scalar)
 
     Output:
-    S  -- (N+1)D array of signal values
+        S:  (N+1)D array of signal values
     """
     
     [b, D, f, S0] = at_least_1d([b, D, f, S0])
@@ -65,16 +65,16 @@ def ballistic(b: npt.NDArray[np.float64], c: npt.NDArray[np.float64], D: npt.NDA
     Return MR signal based on the ballistic IVIM model.
     
     Arguments: 
-    b  -- vector of b-values [s/mm2]
-    c  -- vector of c-values [s/mm]
-    D  -- ND array of diffusion coefficients [mm2/s]
-    f  -- ND array of perfusion fractions (same shape as D or scalar)
-    vd -- ND array of velocity disperions [mm/s] (same shape as D or scalar)
-    S0 -- (optional) ND array of signal values at b == 0 (same shape as D or scalar)
-    K  -- (optional) ND array of kurtosis coefficients (same shape as D or scalar)
+        b:  vector of b-values [s/mm2]
+        c:  vector of c-values [s/mm]
+        D:  ND array of diffusion coefficients [mm2/s]
+        f:  ND array of perfusion fractions (same shape as D or scalar)
+        vd: ND array of velocity disperions [mm/s] (same shape as D or scalar)
+        S0: (optional) ND array of signal values at b == 0 (same shape as D or scalar)
+        K:  (optional) ND array of kurtosis coefficients (same shape as D or scalar)
 
     Output:
-    S  -- (N+1)D array of signal values
+        S:  (N+1)D array of signal values
     """
 
     [b, c, D, f, vd, S0] = at_least_1d([b, c, D, f, vd, S0])
@@ -85,15 +85,15 @@ def diffusive(b: npt.NDArray[np.float64], D: npt.NDArray[np.float64], f: npt.NDA
     Return MR signal based on the diffusive IVIM model.
     
     Arguments: 
-    b     -- vector of b-values [s/mm2]
-    D     -- ND array of diffusion coefficients [mm2/s]
-    f     -- ND array of perfusion fractions (same shape as D or scalar)
-    Dstar -- ND array of pseudo-diffusion coefficients [mm2/s] (same shape as D or scalar)
-    S0    -- (optional) ND array of signal values at b == 0 (same shape as D or scalar)
-    K     -- (optional) ND array of kurtosis coefficients (same shape as D or scalar)
+        b:     vector of b-values [s/mm2]
+        D:     ND array of diffusion coefficients [mm2/s]
+        f:     ND array of perfusion fractions (same shape as D or scalar)
+        Dstar: ND array of pseudo-diffusion coefficients [mm2/s] (same shape as D or scalar)
+        S0:    (optional) ND array of signal values at b == 0 (same shape as D or scalar)
+        K:     (optional) ND array of kurtosis coefficients (same shape as D or scalar)
 
     Output:
-    S     -- (N+1)D array of signal values
+        S:     (N+1)D array of signal values
     """
 
     [b, D, f, Dstar, S0] = at_least_1d([b, D, f, Dstar, S0])
@@ -106,11 +106,11 @@ def monoexp_jacobian(b: npt.NDArray[np.float64], D: npt.NDArray[np.float64]) -> 
     S(b) = exp(-b*D)
 
     Arguments:
-    b -- vector of b-values [s/mm2]
-    D -- ND array of diffusion coefficients [mm2/s]
+        b: vector of b-values [s/mm2]
+        D: ND array of diffusion coefficients [mm2/s]
 
     Output: 
-    J -- Jacobian matrix
+        J: Jacobian matrix
     """
     # warning! alternative to b[np.newaxis,:] may be needed
     J = (monoexp(b, D) * -b[np.newaxis, :])[...,np.newaxis] # D is the only parameter, but we still want the last dimension
@@ -123,12 +123,12 @@ def kurtosis_jacobian(b: npt.NDArray[np.float64], D: npt.NDArray[np.float64], K:
     S(b) = exp(-b*D + b**2*D**2*K/6)
 
     Arguments:
-    b -- vector of b-values [s/mm2]
-    D -- ND array of diffusion coefficients [mm2/s]
-    K -- ND array of kurtosis coefficients (same shape as D or scalar)
+        b: vector of b-values [s/mm2]
+        D: ND array of diffusion coefficients [mm2/s]
+        K: ND array of kurtosis coefficients (same shape as D or scalar)
 
     Output: 
-    J -- Jacobian matrix
+        J: Jacobian matrix
     """
 
     [b,D,K] = at_least_1d([b,D,K])
@@ -146,14 +146,14 @@ def sIVIM_jacobian(b: npt.NDArray[np.float64], D: npt.NDArray[np.float64], f: np
     S(b) = S0((1-f)*exp(-b*D+b^2*D^2*K/6)+fδ(b))
 
     Arguments: 
-    b  -- vector of b-values [s/mm2]
-    D  -- vecND arraytor of diffusion coefficients [mm2/s]
-    f  -- ND array of perfusion fractions (same shape as D or scalar)
-    S0 -- (optional) ND array of signal values at b == 0 (same shape as D or scalar)
-    K  -- (optional) ND array of kurtosis coefficients (same shape as D or scalar)
+        b:  vector of b-values [s/mm2]
+        D:  ND array of diffusion coefficients [mm2/s]
+        f:  ND array of perfusion fractions (same shape as D or scalar)
+        S0: (optional) ND array of signal values at b == 0 (same shape as D or scalar)
+        K:  (optional) ND array of kurtosis coefficients (same shape as D or scalar)
 
     Output:
-    J  -- Jacobian matrix
+        J:  Jacobian matrix
     """
 
     [b, D, f] = at_least_1d([b, D, f])
@@ -196,16 +196,16 @@ def ballistic_jacobian(b:  npt.NDArray[np.float64], c: npt.NDArray[np.float64], 
     S(b) = S0((1-f)*exp(-b*D+b^2*D^2*K/6)+f*exp(-b*Db-vd^2*c*2))
 
     Arguments: 
-    b  -- vector of b-values [s/mm2]
-    c  -- vector of c-values [s/mm]
-    D  -- ND array of diffusion coefficients [mm2/s]
-    f  -- ND array of perfusion fractions (same shape as D or scalar)
-    vd -- ND array of velocity dispersions [mm/s] (same shape as D or scalar)
-    S0 -- (optional) ND array of signal values at b == 0 (same shape as D or scalar)
-    K  -- (optional) ND array of kurtosis coefficients (same shape as D or scalar)
+        b:  vector of b-values [s/mm2]
+        c:  vector of c-values [s/mm]
+        D:  ND array of diffusion coefficients [mm2/s]
+        f:  ND array of perfusion fractions (same shape as D or scalar)
+        vd: ND array of velocity dispersions [mm/s] (same shape as D or scalar)
+        S0: (optional) ND array of signal values at b == 0 (same shape as D or scalar)
+        K:  (optional) ND array of kurtosis coefficients (same shape as D or scalar)
 
     Output:
-    J  -- Jacobian matrix
+        J:  Jacobian matrix
     """
 
     [b, D, f, vd] = at_least_1d([b, D, f, vd])
@@ -246,15 +246,15 @@ def diffusive_jacobian(b: npt.NDArray[np.float64], D: npt.NDArray[np.float64], f
     S(b) = S0((1-f)*exp(-b*D+b^2*D^2*K/6)+f*exp(-b*D*))
 
     Arguments: 
-    b     -- vector of b-values [s/mm2]
-    D     -- ND array of diffusion coefficients [mm2/s]
-    f     -- ND array of perfusion fractions (same shape as D or scalar)
-    Dstar -- ND array of perfusion fractions (same shape as D or scalar)
-    S0    -- (optional) ND array of signal values at b == 0 (same shape as D or scalar)
-    K     -- (optional) ND array of kurtosis coefficients (same shape as D or scalar)
+        b:     vector of b-values [s/mm2]
+        D:     ND array of diffusion coefficients [mm2/s]
+        f:     ND array of perfusion fractions (same shape as D or scalar)
+        Dstar: ND array of perfusion fractions (same shape as D or scalar)
+        S0:    (optional) ND array of signal values at b == 0 (same shape as D or scalar)
+        K:     (optional) ND array of kurtosis coefficients (same shape as D or scalar)
 
     Output:
-    J     -- Jacobian matrix
+        J:     Jacobian matrix
     """
 
     [b, D, f, Dstar] = at_least_1d([b, D, f, Dstar])

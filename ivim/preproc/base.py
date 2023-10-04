@@ -1,19 +1,19 @@
+""" General functions for preprocessing IVIM image data. """
+
 import numpy as np
 import nibabel as nib
 from ivim.io.base import data_from_file, file_from_data, read_bval, read_bvec, read_cval, read_im, write_bval, write_cval, write_bvec
-
-""" General functions for preprocessing IVIM image data. """
 
 def average(im_file: str, bval_file: str, outbase: str, cval_file: str | None = None, avg_type: str = 'geo') -> None:
     """
     Average signal across encoding directions.
 
     Arguments:
-    im_file   -- path to nifti image file
-    bval_file -- path to .bval file
-    outbase   -- basis for output filenames, i.e. filename without file extension to which .nii.gz, .bval, etc. is added
-    cval_file -- (optional) path to .cval file
-    avg_type  -- (optional) kind of averaging: 'geo' for geometric mean or 'arith' for arithmetic mean
+        im_file:   path to nifti image file
+        bval_file: path to .bval file
+        outbase:   basis for output filenames, i.e. filename without file extension to which .nii.gz, .bval, etc. is added
+        cval_file: (optional) path to .cval file
+        avg_type:  (optional) kind of averaging: 'geo' for geometric mean or 'arith' for arithmetic mean
     """
 
     if cval_file is None:
@@ -47,13 +47,13 @@ def combine(dwi_files: list, bval_files: list, outbase: str, bvec_files: list | 
     Combine a set of dwi nifti files and the corresponding .bval, .bvec and .cval files to single files.
 
     Arguments:
-    dwi_files  -- list of paths to nifti image file
-    bval_files -- list of paths to .bval files
-    outbase    -- basis for output filenames, i.e. filename without file extension to which .nii.gz, .bval, etc. is added
-    bvec_files -- (optional) list of paths to .bvec files
-    cval_files -- (optional) list of paths to .cval files
-    normb      -- (optional) if set to a value in the data set, each data set is normalized towards the data at this b-value (typically normb = 0)
-    roi_file   -- (optional) path to nifti file defining a region-of-interest (ROI) used for normalization
+        dwi_files:  list of paths to nifti image file
+        bval_files: list of paths to .bval files
+        outbase:    basis for output filenames, i.e. filename without file extension to which .nii.gz, .bval, etc. is added
+        bvec_files: (optional) list of paths to .bvec files
+        cval_files: (optional) list of paths to .cval files
+        normb:      (optional) if set to a value in the data set, each data set is normalized towards the data at this b-value (typically normb = 0)
+        roi_file:   (optional) path to nifti file defining a region-of-interest (ROI) used for normalization
     """
 
     dwis = []
@@ -98,13 +98,13 @@ def extract(im_file: str, bval_file: str, outbase: str, bvec_file: str | None = 
     Extract data and b-values (optionally also c-values) equal to specific b-value (and optionally c-value).
 
     Arguments:
-    im_file   -- path to nifti image file
-    bval_file -- path to .bval file
-    outbase   -- basis for output filenames, i.e. filename without file extension to which .nii.gz, .bval, etc. is added
-    bvec_file -- (optional) path to .bvec file
-    b_ex      -- (optional) b-value to extract, i.e. b_ex = 0 will extract data from all frames with b == 0
-    cval_file -- (optional) path to .cval file
-    c_ex      -- (optional) c-value to extract in addition to condition given by b_ex, i.e. both b == b_ex and c == c_ex must be fulfilled for extraction
+        im_file:   path to nifti image file
+        bval_file: path to .bval file
+        outbase:   basis for output filenames, i.e. filename without file extension to which .nii.gz, .bval, etc. is added
+        bvec_file: (optional) path to .bvec file
+        b_ex:      (optional) b-value to extract, i.e. b_ex = 0 will extract data from all frames with b == 0
+        cval_file: (optional) path to .cval file
+        c_ex:      (optional) c-value to extract in addition to condition given by b_ex, i.e. both b == b_ex and c == c_ex must be fulfilled for extraction
     """
 
     if (cval_file is None):

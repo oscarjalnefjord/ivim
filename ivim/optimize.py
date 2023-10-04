@@ -1,12 +1,12 @@
+"""
+Methods for Cramer-Rao lower bounds optmization of b-value schemes.
+"""
+
 import numpy as np
 import numpy.typing as npt
 from scipy.optimize import minimize, Bounds, curve_fit
 from ivim.models import sIVIM, diffusive, ballistic, sIVIM_jacobian, diffusive_jacobian, ballistic_jacobian, check_regime, NO_REGIME, DIFFUSIVE_REGIME, BALLISTIC_REGIME
 from ivim.seq.sde import calc_c, G_from_b, MONOPOLAR, BIPOLAR
-
-"""
-Methods for Cramer-Rao lower bounds optmization of b-value schemes.
-"""
 
 def crlb(D: npt.NDArray[np.float64], f: npt.NDArray[np.float64], regime: str, 
          bmax: float = 1000, 
@@ -18,30 +18,30 @@ def crlb(D: npt.NDArray[np.float64], f: npt.NDArray[np.float64], regime: str,
     Optimize b-values (and possibly c-values) using Cramer-Rao lower bounds optmization.
 
     Arguments:
-    D           -- diffusion coefficients to optimize over [mm2/s]
-    f           -- perfusion fractions to optimize over (same size as D)
-    regime      -- IVIM regime to model: no (= sIVIM), diffusive (long encoding time) or ballistic (short encoding time)
-    bmax        -- (optional) the largest b-value that can be returned by the optimization
-    fitK        -- (optional) if True, optimize with the intention to be able to fit K in addition to D and f
-    minbias     -- (optional) if True, include a bias term in cost function. Requires some of the remaining optional arguments
-    bias_regime -- (optional) specifies model to use for bias term
-    K           -- (optional) kurtosis coefficients to optimize over if fitK and for bias term if minbias
-    SNR         -- (optional) expected SNR level at b = 0 to be used to scale the influence of the bias term
+        D:           diffusion coefficients to optimize over [mm2/s]
+        f:           perfusion fractions to optimize over (same size as D)
+        regime:      IVIM regime to model: no (= sIVIM), diffusive (long encoding time) or ballistic (short encoding time)
+        bmax:        (optional) the largest b-value that can be returned by the optimization
+        fitK:        (optional) if True, optimize with the intention to be able to fit K in addition to D and f
+        minbias:     (optional) if True, include a bias term in cost function. Requires some of the remaining optional arguments
+        bias_regime: (optional) specifies model to use for bias term
+        K:           (optional) kurtosis coefficients to optimize over if fitK and for bias term if minbias
+        SNR:         (optional) expected SNR level at b = 0 to be used to scale the influence of the bias term
     ---- no regime ----
-    bthr        -- (optional) the smallest non-zero b-value that can be returned by the optimization
+        bthr:        (optional) the smallest non-zero b-value that can be returned by the optimization
     ---- diffusive regime ----
-    Dstar       -- (optional) pseudodiffusion coefficients for optimization and/or bias term [mm/s]
+        Dstar:       (optional) pseudodiffusion coefficients for optimization and/or bias term [mm/s]
     ---- ballistic regime ----
-    vd          -- (optional) velocity dispersion coefficient for optimization and/or bias term [mm/s]
-    seq         -- (optional) type of diffusion encoding gradient, 'monopolar' or 'bipolar'
-    delta       -- (optional) duration of diffusion encoding gradients [s]
-    Delta       -- (optional) separation of diffusion encoding gradients [s]
+        vd:          (optional) velocity dispersion coefficient for optimization and/or bias term [mm/s]
+        seq:         (optional) type of diffusion encoding gradient, 'monopolar' or 'bipolar'
+        delta:       (optional) duration of diffusion encoding gradients [s]
+        Delta:       (optional) separation of diffusion encoding gradients [s]
     
     Output:
-    b       -- optimized b-values
-    a       -- fraction of total acquisition time to spend at each b-value in b 
+        b:           optimized b-values
+        a:           fraction of total acquisition time to spend at each b-value in b 
     ---- ballistic regime ----
-    fc      -- booleans telling if each b-value should be acquired with a flow-compensated (fc) or non-flow-compensated pulse sequence
+        fc:          booleans telling if each b-value should be acquired with a flow-compensated (fc) or non-flow-compensated pulse sequence
     """
 
     def cost(x, n0 = 0, nfc = 0):

@@ -1,5 +1,5 @@
 **************************************
-API
+Model fitting
 **************************************
 
 ``ivim.fit``
@@ -16,10 +16,3 @@ API
 .. automodule:: ivim.optimize
 .. autofunction:: ivim.optimize.crlb
 
-``ivim.models``
-#####################
-
-.. automodule:: ivim.models
-.. autofunction:: ivim.models.sIVIM
-.. autofunction:: ivim.models.diffusive
-.. autofunction:: ivim.models.ballistic

@@ -1,3 +1,5 @@
+""" Functions for IVIM parameter estimation. """
+
 import numpy as np
 import numpy.typing as npt
 from scipy.optimize import curve_fit
@@ -7,8 +9,6 @@ from ivim.models import kurtosis as kurtosis_model
 from ivim.constants import Db
 from ivim.misc import halfSampleMode
 from ivim.io.base import data_from_file, file_from_data, read_im
-
-""" Functions for IVIM parameter estimation. """
 
 def nlls(im_file: str, bval_file: str, regime: str, roi_file: str | None = None, outbase: str | None = None, verbose: bool = False, fitK: bool = False, cval_file: str | None = None) -> None:
     """

@@ -16,4 +16,7 @@ Contents
 
    installation
    examples
-   api
+   fit
+   models
+   sim
+   preproc

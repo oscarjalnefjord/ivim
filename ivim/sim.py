@@ -1,8 +1,8 @@
+"""Functions for generating noisy image data based on IVIM parameter maps."""
+
 import numpy as np
 from ivim.models import sIVIM, diffusive, ballistic, check_regime, DIFFUSIVE_REGIME, BALLISTIC_REGIME
 from ivim.io.base import write_im, read_im, read_bval, read_cval, write_bval, write_cval
-
-"""Functions for generating noisy image data based on IVIM parameter maps."""
 
 def noise(D_file: str, f_file: str, regime: str, bval_file: str, 
           noise_sigma: float, outbase: str, S0_file: str | None = None, 
@@ -12,19 +12,19 @@ def noise(D_file: str, f_file: str, regime: str, bval_file: str,
     Generate noisy data for the IVIM model at a given regime and noise level based on IVIM parameter maps.
      
     Arguments:
-    D_file      -- path to nifti file with diffusion coefficients
-    f_file      -- path to nifti file with perfusion fractions
-    regime      -- IVIM regime to model: no (= sIVIM), diffusive (long encoding time) or ballistic (short encoding time)
-    bval_file   -- path to .bval file
-    noise_sigma -- standard deviation of the noise at b = 0
-    outbase     -- string used to set the file path to out, e.g. '/folder/out' gives '/folder/out.nii.gz' etc.
-    S0_file     -- (optional) path to nifti file with signal at b = 0, if None S0 = 1
-    K_file      -- (optional) path to nifti file with kurtosis coefficients
+        D_file:      path to nifti file with diffusion coefficients
+        f_file:      path to nifti file with perfusion fractions
+        regime:      IVIM regime to model: no (= sIVIM), diffusive (long encoding time) or ballistic (short encoding time)
+        bval_file:   path to .bval file
+        noise_sigma: standard deviation of the noise at b = 0
+        outbase:     string used to set the file path to out, e.g. '/folder/out' gives '/folder/out.nii.gz' etc.
+        S0_file:     (optional) path to nifti file with signal at b = 0, if None S0 = 1
+        K_file:      (optional) path to nifti file with kurtosis coefficients
     ---- diffusive regime ----
-    Dstar_file  -- (optional) path to nifti file with pseudo diffusion coefficients
+        Dstar_file:  (optional) path to nifti file with pseudo diffusion coefficients
     ---- ballistic regime ----
-    vd_file     -- (optional) path to nifti file with velocity dispersion coefficients
-    cval_file   -- (optional) path to .cval file
+        vd_file:     (optional) path to nifti file with velocity dispersion coefficients
+        cval_file:   (optional) path to .cval file
     """
 
     check_regime(regime)

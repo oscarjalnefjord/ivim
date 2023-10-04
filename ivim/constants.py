@@ -1,6 +1,6 @@
-import numpy as np
-
 """ Numerical constants relevant for IVIM. """
+
+import numpy as np
 
 # Gyromagnetic constant
 ybar = 42.577e6  # Hz/T

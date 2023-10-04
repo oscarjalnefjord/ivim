@@ -1,3 +1,5 @@
+""" Tools to correct for eddy current and susceptibility induced distorsions. """
+
 import os 
 import numpy as np
 import shutil
@@ -9,19 +11,17 @@ from ivim.preproc.base import combine, extract
 if shutil.which('fsl') is None:
     warnings.warn('FSL installation not found. Correction for motion, eddy currents and susceptibility induced distorsions will not work.')
 
-""" Tools to correct for eddy current and susceptibility induced distorsions. """
-
 def ec_topup(im_file: str, bval_file: str, imrev_file: str, outbase: str, bvalrev_file: str | None = None, save_inter: bool = False):
     """
     Run FSL eddy_correct and TOPUP.
     
     Arguments:
-    im_file      -- path to nifti image file
-    bval_file    -- path to .bval file
-    imrev_file   -- path to nifit image file for image with reversed phase encoding direction
-    outbase      -- basis for output filenames, i.e. filename without file extension to which .nii.gz, .bval, etc. is added
-    bvalrev_file -- (optional) path to .bval file for the imrev_file. If not given, it is assumed imrev_file only contains b = 0 images 
-    save_inter   -- (optional) if True, files at intermediate steps are saved to output folder
+        im_file:      path to nifti image file
+        bval_file:    path to .bval file
+        imrev_file:   path to nifit image file for image with reversed phase encoding direction
+        outbase:      basis for output filenames, i.e. filename without file extension to which .nii.gz, .bval, etc. is added
+        bvalrev_file: (optional) path to .bval file for the imrev_file. If not given, it is assumed imrev_file only contains b = 0 images 
+        save_inter:   (optional) if True, files at intermediate steps are saved to output folder
 
     To reduce the number of arguments, the following assumptions are made:
     - phase encoding is in the column (up down) dimension, which usually translate to AP for brain imaging

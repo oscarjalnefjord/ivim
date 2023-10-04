@@ -1,17 +1,17 @@
+""" Various useful functions. """
+
 import numpy as np
 import numpy.typing as npt
-
-""" Various useful functions. """
 
 def logIo(x: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
     """
     Calculate the natural log of the 0th order modified Bessel function of 1st kind.
 
     Arguments: 
-    x -- numerical vector
+        x: numerical vector
 
     Output:
-    y -- natural log of the 0th order modified Bessel function of the 1st kind of x
+        y: natural log of the 0th order modified Bessel function of the 1st kind of x
 
     Follows the exponential implementation of the Bessel function in Numerical 
     Recipes, Ch. 6.Translated to Python from C++ from the FSL source code and 
@@ -37,10 +37,10 @@ def halfSampleMode(X: npt.NDArray[np.float64]):
     Calculate the half sample mode for each row in X.
      
     Arguments:
-    X   -- numerical matrix
+        X:   numerical matrix
 
     Output:
-    hsm -- half sample mode of each row in X
+        hsm: half sample mode of each row in X
 
     The method build on a recursive call to _HSM_rec.
     
