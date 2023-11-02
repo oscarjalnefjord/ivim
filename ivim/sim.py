@@ -1,13 +1,17 @@
 """Functions for generating noisy image data based on IVIM parameter maps."""
 
 import numpy as np
-from ivim.models import sIVIM, diffusive, ballistic, check_regime, DIFFUSIVE_REGIME, BALLISTIC_REGIME
-from ivim.io.base import write_im, read_im, read_bval, read_cval, write_bval, write_cval
+from ivim.models import sIVIM, diffusive, ballistic, intermediate, check_regime, DIFFUSIVE_REGIME, BALLISTIC_REGIME, INTERMEDIATE_REGIME
+from ivim.io.base import write_im, read_im, read_bval, read_cval, write_bval, write_cval, read_time, read_k, write_time, write_k
+from ivim.seq.sde import MONOPOLAR, BIPOLAR
 
 def noise(D_file: str, f_file: str, regime: str, bval_file: str, 
           noise_sigma: float, outbase: str, S0_file: str | None = None, 
           K_file: str | None = None, Dstar_file: str | None = None, 
-          vd_file: str | None = None, cval_file: str | None = None):
+          vd_file: str | None = None, cval_file: str | None = None,
+          tau_file: str | None = None, v_file: str | None = None,
+          delta_file: str | None = None, Delta_file: str | None = None, 
+          T_file: str | None = None, seq: str = MONOPOLAR, k_file: str | None = None):
     """
     Generate noisy data for the IVIM model at a given regime and noise level based on IVIM parameter maps.
      
@@ -25,6 +29,13 @@ def noise(D_file: str, f_file: str, regime: str, bval_file: str,
     ---- ballistic regime ----
         vd_file:     (optional) path to nifti file with velocity dispersion coefficients
         cval_file:   (optional) path to .cval file
+    ---- intermediate regime ----
+        tau_file:    (optional) path to nifti file with correlation times
+        v_file:      (optional) path to nifti file with velocity coefficients
+        delta_file:  (optional) path to .delta file
+        Delta_file:  (optional) path to .Delta file
+        T_file:      (optional) path to .T file
+        k_file:      (optional) path to .k file
     """
 
     check_regime(regime)
@@ -41,8 +52,15 @@ def noise(D_file: str, f_file: str, regime: str, bval_file: str,
         Dstar = read_im(Dstar_file)
     elif regime == BALLISTIC_REGIME:
         if vd_file is None:
-            raise ValueError(f'Dstar must be set for "{BALLISTIC_REGIME}" regime.')
+            raise ValueError(f'vd must be set for "{BALLISTIC_REGIME}" regime.')
         vd = read_im(vd_file)
+    elif regime == INTERMEDIATE_REGIME:
+        if v_file is None:
+            raise ValueError(f'v must be set for "{INTERMEDIATE_REGIME}" regime.')
+        v = read_im(v_file)
+        if tau_file is None:
+            raise ValueError(f'tau must be set for "{INTERMEDIATE_REGIME}" regime.')
+        tau = read_im(tau_file)
     if K_file is None:
         K = np.zeros_like(D)
     else:
@@ -51,6 +69,12 @@ def noise(D_file: str, f_file: str, regime: str, bval_file: str,
     b = read_bval(bval_file)
     if regime == BALLISTIC_REGIME:
         c = read_cval(cval_file)
+    if regime == INTERMEDIATE_REGIME:
+        delta = read_time(delta_file) # specific read functions would be nicer
+        Delta = read_time(Delta_file)
+        if seq == BIPOLAR:
+            T = read_time(T_file)
+            k = read_k(k_file)
 
     seg = ~np.isnan(D)
 
@@ -58,9 +82,15 @@ def noise(D_file: str, f_file: str, regime: str, bval_file: str,
         Y = diffusive(b, D, f, Dstar, S0, K)
     elif regime == BALLISTIC_REGIME:
         Y = ballistic(b, c, D, f, vd, S0, K)
+    elif regime == INTERMEDIATE_REGIME:
+        if seq == BIPOLAR:
+            Y = intermediate(b, delta, Delta, D, f, v, tau, S0, K, seq, T, k)
+        elif seq == MONOPOLAR:
+            Y = intermediate(b, delta, Delta, D, f, v, tau, S0, K, seq)
+        else:
+            raise ValueError(f'Invalid pulse sequence "{seq}".')
     else:
         Y = sIVIM(b, D, f, S0, K)
-
 
     if Y.ndim > 4:
         raise ValueError('No support for 5D data and above.')
@@ -79,4 +109,10 @@ def noise(D_file: str, f_file: str, regime: str, bval_file: str,
     write_im(outbase + '.nii.gz', Ynoise, imref_file = D_file)
     write_bval(outbase + '.bval',b)
     if regime == BALLISTIC_REGIME:
-        write_cval(outbase + '.cval',c)
+        write_cval(outbase + '.cval', c)
+    if regime == INTERMEDIATE_REGIME:
+        write_time(outbase + '.delta', delta)
+        write_time(outbase + '.Delta', Delta)
+        if seq == BIPOLAR:
+            write_time(outbase + '.T', T)
+            write_k(outbase + '.k', k)

@@ -3,12 +3,13 @@
 import numpy as np
 import numpy.typing as npt
 from scipy.optimize import curve_fit
-from ivim.models import sIVIM, diffusive, ballistic, NO_REGIME, DIFFUSIVE_REGIME, BALLISTIC_REGIME, check_regime
+from ivim.models import sIVIM, diffusive, ballistic, intermediate, NO_REGIME, DIFFUSIVE_REGIME, BALLISTIC_REGIME, INTERMEDIATE_REGIME, check_regime
 from ivim.models import monoexp as monoexp_model
 from ivim.models import kurtosis as kurtosis_model
 from ivim.constants import Db
+from ivim.seq.sde import MONOPOLAR, BIPOLAR
 from ivim.misc import halfSampleMode
-from ivim.io.base import data_from_file, file_from_data, read_im
+from ivim.io.base import data_from_file, file_from_data, read_im, read_time, read_k
 
 def nlls(im_file: str, bval_file: str, regime: str, roi_file: str | None = None, outbase: str | None = None, verbose: bool = False, fitK: bool = False, cval_file: str | None = None) -> None:
     """
@@ -366,7 +367,9 @@ def seg(im_file: str, bval_file: str, regime: str, bthr: float = 200, roi_file: 
         pars['K'] = K
     save_parmaps(pars, outbase, im_file, roi_file)
 
-def bayes(im_file: str, bval_file: str, regime: str, roi_file: str | None = None, outbase: str | None = None, verbose: bool = False, fitK: bool = False, spatial_prior: bool = False, n: int = 2000, burns: int = 1000, ctm: str = 'mean', cval_file: str | None = None):
+def bayes(im_file: str, bval_file: str, regime: str, roi_file: str | None = None, outbase: str | None = None, verbose: bool = False, fitK: bool = False, 
+          spatial_prior: bool = False, n: int = 2000, burns: int = 1000, ctm: str = 'mean', 
+          cval_file: str | None = None, seq: str = MONOPOLAR, delta_file: str | None = None, Delta_file: str | None = None, T_file: str | None = None, k_file: str | None = None):
     """
     Bayesian fitting of the IVIM model in different regimes
 
@@ -532,7 +535,13 @@ def bayes(im_file: str, bval_file: str, regime: str, roi_file: str | None = None
         Y, b, c = data_from_file(im_file, bval_file, cval_file=cval_file, roi_file=roi_file)
     else:
         Y, b = data_from_file(im_file, bval_file, roi_file = roi_file)
-
+    if regime == INTERMEDIATE_REGIME:
+        delta = read_time(delta_file)
+        Delta = read_time(Delta_file)
+        if seq == BIPOLAR:
+            T = read_time(T_file)
+            k = read_k(k_file)
+            
     if regime == DIFFUSIVE_REGIME:
         if fitK:
             def fn(X, P):
@@ -555,6 +564,25 @@ def bayes(im_file: str, bval_file: str, regime: str, roi_file: str | None = None
                 D, f, vd, S0 = P[:, 0], P[:, 1], P[:, 2], P[:, 3]
                 b, c = X[:, 0], X[:, 1]
                 return ballistic(b, c, D, f, vd, S0)
+    elif regime == INTERMEDIATE_REGIME:
+        if fitK:
+            def fn(X, P):
+                D, f, v, tau, S0, K = P[:, 0], P[:, 1], P[:, 2], P[:, 3], P[:, 4], P[:, 5]
+                if seq == MONOPOLAR:
+                    b, delta, Delta = X[:, 0], X[:, 1], X[:, 2]
+                    return intermediate(b, delta, Delta, D, f, v, tau, S0, K)
+                else:
+                    b, delta, Delta, T, k = X[:, 0], X[:, 1], X[:, 2], X[:, 3], X[:, 4]
+                    return intermediate(b, delta, Delta, D, f, v, tau, S0, K, seq=seq, T=T, k=k)
+        else:
+            def fn(X, P):
+                D, f, v, tau, S0 = P[:, 0], P[:, 1], P[:, 2], P[:, 3], P[:, 4]
+                if seq == MONOPOLAR:
+                    b, delta, Delta = X[:, 0], X[:, 1], X[:, 2]
+                    return intermediate(b, delta, Delta, D, f, v, tau, S0)
+                else:
+                    b, delta, Delta, T, k = X[:, 0], X[:, 1], X[:, 2], X[:, 3], X[:, 4]
+                    return intermediate(b, delta, Delta, D, f, v, tau, S0, seq=seq, T=T, k=k)
     else:
         if fitK:
             def fn(X, P):
@@ -567,7 +595,7 @@ def bayes(im_file: str, bval_file: str, regime: str, roi_file: str | None = None
                 b = X
                 return sIVIM(b, D, f, S0)
     
-    npars = 4 + fitK - (regime == NO_REGIME)
+    npars = 4 + fitK - (regime == NO_REGIME) + (regime == INTERMEDIATE_REGIME)
     P0 = np.zeros((Y.shape[0], npars))
     P0[:, 0] = 1e-3
     P0[:, 1] = 0.1
@@ -582,6 +610,13 @@ def bayes(im_file: str, bval_file: str, regime: str, roi_file: str | None = None
         lims = np.insert(lims, 2, [0, 5.0], axis = 1)
         idxS0 = 3
         idxK = 4
+    elif regime == INTERMEDIATE_REGIME:
+        P0[:, 2] = 2.0
+        P0[:, 3] = 0.1
+        lims = np.insert(lims, 2, [0, 5.0], axis = 1)
+        lims = np.insert(lims, 3, [0.001, 1.0], axis = 1)
+        idxS0 = 4
+        idxK = 5
     else:
         idxS0 = 2
         idxK = 3
@@ -592,6 +627,11 @@ def bayes(im_file: str, bval_file: str, regime: str, roi_file: str | None = None
 
     if regime == BALLISTIC_REGIME:
         X = np.stack((b, c), axis=1)
+    elif regime == INTERMEDIATE_REGIME:
+        if seq == MONOPOLAR:
+            X = np.stack((b, delta, Delta), axis=1)
+        else:
+            X = np.stack((b, delta, Delta, T, k), axis=1)
     else:
         X = b
     P,_ = _estimation(fn, Y, X, P0, lims, n=n, burns=burns, ctm=ctm, spatial_prior=spatial_prior, roi=read_im(roi_file), verbose=verbose)
@@ -601,6 +641,9 @@ def bayes(im_file: str, bval_file: str, regime: str, roi_file: str | None = None
         pars['Dstar'] = P[:, 2]
     if regime == BALLISTIC_REGIME:
         pars['vd'] = P[:, 2]
+    if regime == INTERMEDIATE_REGIME:
+        pars['v'] = P[:, 2]
+        pars['tau'] = P[:, 3]
     if fitK:
         pars['K'] = P[:, idxK]
     save_parmaps(pars, outbase, im_file, roi_file)
@@ -651,7 +694,7 @@ def trim_par(par: npt.NDArray[np.float64], parname: str) -> npt.NDArray[np.float
     par     -- vector with trimmed parameter values
     """
 
-    lims = {'D':10e-3, 'f':1, 'Dstar':1, 'vd':20, 'K':20}
+    lims = {'D':10e-3, 'f':1, 'Dstar':1, 'vd':20, 'K':20, 'v':20, 'tau':10}
     if parname in lims.keys():
         par = np.clip(par, -lims[parname], lims[parname])
     return par

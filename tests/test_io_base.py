@@ -5,7 +5,8 @@ import tempfile
 from ivim.io.base import (data_from_file, file_from_data, 
                           read_im, read_bval, read_cval, read_bvec, 
                           write_im, write_bval, write_cval, write_bvec,
-                          check_vector, check_2dmatrix, check_roi)
+                          check_vector, check_2dmatrix, check_roi,
+                          read_time, read_k, write_time, write_k)
 
 # Paths to data
 data_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)),'test_data')
@@ -101,6 +102,14 @@ def test_read_cval():
     c = np.array([0.000, 1.234, 2.345, 3.456])
     np.testing.assert_equal(c, read_cval(os.path.join(data_folder,'test.cval')))
 
+def test_read_time():
+    t = np.array([0.1, 0.003, 0.023, 0.240, 0.00123])
+    np.testing.assert_equal(t, read_time(os.path.join(data_folder,'test.T')))
+
+def test_read_k():
+    k = np.array([1, 1, -1, 1, -1])
+    np.testing.assert_equal(k, read_time(os.path.join(data_folder,'test.k')))
+
 def test_read_bvec():
     v = np.array([[1.000, -1.000, 0.420, 0.000],
                   [0.000, 0.000, 0.420, 0.123],
@@ -133,6 +142,18 @@ def test_write_cval():
     temp_file = os.path.join(temp_folder,'temp_iowc.cval')
     write_cval(temp_file, c)
     np.testing.assert_equal(c, read_cval(temp_file))
+
+def test_write_time():
+    t = read_time(os.path.join(data_folder,'test.T'))
+    temp_file = os.path.join(temp_folder,'temp_iowt.T')
+    write_time(temp_file, t)
+    np.testing.assert_equal(t, read_time(temp_file))
+
+def test_write_k():
+    k = read_k(os.path.join(data_folder,'test.k'))
+    temp_file = os.path.join(temp_folder,'temp_iowk.k')
+    write_k(temp_file, k)
+    np.testing.assert_equal(k, read_k(temp_file))
 
 def test_write_bvec():
     v = read_bvec(os.path.join(data_folder,'test.bvec'))

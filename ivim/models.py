@@ -2,11 +2,13 @@
 
 import numpy as np
 import numpy.typing as npt
-from ivim.constants import Db
+from ivim.constants import Db, y
+from ivim.seq.sde import MONOPOLAR, BIPOLAR, G_from_b
 
 NO_REGIME = 'no'
 DIFFUSIVE_REGIME = 'diffusive'
 BALLISTIC_REGIME = 'ballistic'
+INTERMEDIATE_REGIME = 'intermediate'
 
 def monoexp(b: npt.NDArray[np.float64], D: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
     """
@@ -22,7 +24,7 @@ def monoexp(b: npt.NDArray[np.float64], D: npt.NDArray[np.float64]) -> npt.NDArr
 
     [b, D] = at_least_1d([b, D])
     S = np.exp(-np.outer(D, b))
-    return np.reshape(S, list(D.shape) + [b.size]) # reshape as np.outer flattens D is ndim > 1
+    return np.reshape(S, list(D.shape) + [b.size]) # reshape as np.outer flattens D if ndim > 1
 
 def kurtosis(b: npt.NDArray[np.float64], D: npt.NDArray[np.float64], K: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
     """
@@ -98,6 +100,52 @@ def diffusive(b: npt.NDArray[np.float64], D: npt.NDArray[np.float64], f: npt.NDA
 
     [b, D, f, Dstar, S0] = at_least_1d([b, D, f, Dstar, S0])
     return S0[..., np.newaxis] * ((1-f[..., np.newaxis])*kurtosis(b, D, K) + f[..., np.newaxis]*monoexp(b, Dstar))
+
+def intermediate(b: npt.NDArray[np.float64], delta: npt.NDArray[np.float64], Delta: npt.NDArray[np.float64], D: npt.NDArray[np.float64], f: npt.NDArray[np.float64], v: npt.NDArray[np.float64], tau: npt.NDArray[np.float64], S0: npt.NDArray[np.float64] = 1, K: npt.NDArray[np.float64] = 0, seq = MONOPOLAR, T: npt.NDArray[np.float64] | None = None, k: npt.NDArray[np.float64] | None = None) -> npt.NDArray[np.float64]:
+    """
+    Return MR signal based on the intermediate IVIM model.
+    
+    Arguments: 
+        b:     vector of b-values [s/mm2]
+        delta: vector of gradient durations [s]
+        Delta: vector of gradient separations [s]
+        D:     ND array of diffusion coefficients [mm2/s]
+        f:     ND array of perfusion fractions (same shape as D or scalar)
+        Dstar: ND array of pseudo-diffusion coefficients [mm2/s] (same shape as D or scalar)
+        S0:    (optional) ND array of signal values at b == 0 (same shape as D or scalar)
+        K:     (optional) ND array of kurtosis coefficients (same shape as D or scalar)
+        seq:   (optional) pulse sequence used (monopolar or bipolar)
+        T:     (optional) vector of encoding times [s]
+        k:     (optional) vector indicating if bipolar pulse sequence is flow compensated or not [-1/1] 
+
+    Output:
+        S:     (N+1)D array of signal values
+    """
+
+    [b, delta, Delta, T, k, D, f, v, tau, S0] = at_least_1d([b, delta, Delta, T, k, D, f, v, tau, S0])
+
+    G = G_from_b(b, Delta, delta, seq)
+
+    Deltam = np.reshape(np.outer(np.ones_like(tau), Delta), list(tau.shape) + [Delta.size])
+    deltam = np.reshape(np.outer(np.ones_like(tau), delta), list(tau.shape) + [Delta.size])
+    Gm     = np.reshape(np.outer(np.ones_like(tau), G), list(tau.shape) + [Delta.size])
+    if seq == BIPOLAR:
+        Tm     = np.reshape(np.outer(np.ones_like(tau), T), list(tau.shape) + [Delta.size])
+        km     = np.reshape(np.outer(np.ones_like(tau), k), list(tau.shape) + [Delta.size])
+    taum   = np.reshape(np.outer(tau, np.ones_like(Delta)), list(tau.shape) + [Delta.size])
+
+    t1 = taum * deltam**2 * (Deltam - deltam/3)
+    t3 = -2*taum**3 * deltam
+    t4 = -taum**4 * (2*np.exp(-Deltam/taum) + 2*np.exp(-deltam/taum) - np.exp(-(Deltam+deltam)/taum) - np.exp(-(Deltam-deltam)/taum) - 2)
+    if seq == BIPOLAR:
+        t1 *= 2
+        t3 *= 2
+        t4 *= 2
+        t4 += taum**4 * km * np.exp(-Tm/taum)*(np.exp((2*Deltam+2*deltam)/taum) - 2*np.exp((2*Deltam+deltam)/taum) + np.exp(2*Deltam/taum) - 2*np.exp((Deltam+2*deltam)/taum) + 4*np.exp((Deltam+deltam)/taum) - 2*np.exp(Deltam/taum) + np.exp(2*deltam/taum) - 2*np.exp(deltam/taum) + 1)
+
+    Fp = np.exp(-y**2*(v**2/3)[..., np.newaxis]*Gm**2*(t1+t3+t4))
+    return S0[..., np.newaxis] * ((1-f[..., np.newaxis])*kurtosis(b, D, K) + f[..., np.newaxis]*monoexp(b, Db)*Fp)
+
 
 def monoexp_jacobian(b: npt.NDArray[np.float64], D: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
     """ 
@@ -296,5 +344,5 @@ def at_least_1d(pars: list) -> list:
 
 def check_regime(regime: str) -> None:
     """ Check that the regime is valid. """
-    if regime not in [NO_REGIME, DIFFUSIVE_REGIME, BALLISTIC_REGIME]:
-        raise ValueError(f'Invalid regime "{regime}". Valid regimes are "{NO_REGIME}", "{DIFFUSIVE_REGIME}" and "{BALLISTIC_REGIME}".')
+    if regime not in [NO_REGIME, DIFFUSIVE_REGIME, BALLISTIC_REGIME, INTERMEDIATE_REGIME]:
+        raise ValueError(f'Invalid regime "{regime}". Valid regimes are "{NO_REGIME}", "{DIFFUSIVE_REGIME}", "{BALLISTIC_REGIME}" and "{INTERMEDIATE_REGIME}".')

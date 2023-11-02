@@ -146,6 +146,34 @@ def read_cval(filename: str) -> npt.NDArray[np.float64]:
     c = np.atleast_1d(np.loadtxt(filename))
     return c
 
+def read_time(filename: str) -> npt.NDArray[np.float64]:
+    """
+    Load time parameter from file in format similar to FSL bval format.
+
+    Arguments:
+        filename: path to time parameter file
+
+    Output:
+        t:        time parameter
+    """
+    
+    t = np.atleast_1d(np.loadtxt(filename))
+    return t
+
+def read_k(filename: str) -> npt.NDArray[np.float64]:
+    """
+    Load k (for intermediate regime) from file in format similar to FSL bval format.
+
+    Arguments:
+        filename: path to k file
+
+    Output:
+        k:        k (+/- 1) 
+    """
+    
+    k = np.atleast_1d(np.loadtxt(filename))
+    return k
+
 def read_bvec(filename: str) -> npt.NDArray[np.float64]:
     """
     Load encoding directions from file in FSL bvec format.
@@ -200,6 +228,28 @@ def write_cval(filename: str, c: npt.NDArray[np.float64]) -> None:
     """
 
     np.savetxt(filename, c, fmt='%.3f', newline=' ')
+
+def write_time(filename: str, t: npt.NDArray[np.float64]) -> None:
+    """
+    Save time parameter to file in format similar to FSL bval.
+
+    Arguments:
+        filename: path to file
+        t:        time parameter
+    """
+
+    np.savetxt(filename, t, fmt='%.5f', newline=' ')
+
+def write_k(filename: str, k: npt.NDArray[np.float64]) -> None:
+    """
+    Save k to file in format similar to FSL bval.
+
+    Arguments:
+        filename: path to file
+        k:        k
+    """
+
+    np.savetxt(filename, k, fmt='%.0f', newline=' ')
 
 def write_bvec(filename: str, v: npt.NDArray[np.float64]) -> None:
     """
