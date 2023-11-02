@@ -41,7 +41,7 @@ delta = 7.3e-3
 Delta = 7.5e-3
 
 rtol = 0.05
-atol = {'D': 0.1e-3, 'f': 0.01, 'K': 0.1, 'S0': 0.1, 'Dstar': 2e-3, 'vd': 0.1}
+atol = {'D': 0.1e-3, 'f': 0.01, 'K': 0.1, 'S0': 0.1, 'Dstar': 2e-3, 'vd': 0.1, 'v': 0.1, 'tau': 0.01}
 
 def test_nlls_sIVIM():
     bthr = 200
@@ -256,33 +256,44 @@ def test_bayes_ballistic():
                         np.testing.assert_allclose(read_im(outbase + f'_{test_par}.nii.gz')[roi], parmaps[test_par][roi], rtol = rtol, atol = atol[test_par])
 
 def test_bayes_intermediate():
-    test_b = np.tile(b[b<1000], 2)
-    test_delta = delta*np.ones_like(test_b)
-    test_Delta = Delta*np.ones_like(test_b)
-    write_bval(bval_file, test_b)
-    delta_file = bval_file.replace('bval', 'delta')
-    write_time(delta_file, test_delta)
-    Delta_file = bval_file.replace('bval', 'Delta')
-    write_time(Delta_file, test_Delta)
+    if False:
+        test_b = np.tile(b[b<1000], 2)
+        test_delta = delta*np.ones_like(test_b)
+        test_Delta = Delta*np.ones_like(test_b)
+        write_bval(bval_file, test_b)
+        delta_file = bval_file.replace('bval', 'delta')
+        write_time(delta_file, test_delta)
+        Delta_file = bval_file.replace('bval', 'Delta')
+        write_time(Delta_file, test_Delta)
 
-    test_k = np.ones_like(test_b)
-    test_k[:test_b.size//2] = -1
-    test_T = 2*(delta+Delta) + 0.1*np.random.rand(test_b.size)
-    k_file = bval_file.replace('bval', 'k')
-    write_k(k_file, test_k)
-    T_file = bval_file.replace('bval', 'T')
-    write_time(T_file, test_T)
+        test_k = np.ones_like(test_b)
+        test_k[:test_b.size//2] = -1
+        test_T = 2*(delta+Delta) + 0.1*np.random.rand(test_b.size)
+        k_file = bval_file.replace('bval', 'k')
+        write_k(k_file, test_k)
+        T_file = bval_file.replace('bval', 'T')
+        write_time(T_file, test_T)
 
-    seq = BIPOLAR
-    K_file = None
+        seq = BIPOLAR
+        K_file = None
 
-    noise(parmap_files['D'], parmap_files['f'], INTERMEDIATE_REGIME, bval_file, 0, outbase, 
-          parmap_files['S0'], K_file = K_file, v_file = parmap_files['v'], tau_file=parmap_files['tau'], 
-          delta_file=delta_file, Delta_file=Delta_file, T_file=T_file, k_file=k_file, seq=seq)
-
+        noise(parmap_files['D'], parmap_files['f'], INTERMEDIATE_REGIME, bval_file, 0, outbase, 
+            parmap_files['S0'], K_file = K_file, v_file = parmap_files['v'], tau_file=parmap_files['tau'], 
+            delta_file=delta_file, Delta_file=Delta_file, T_file=T_file, k_file=k_file, seq=seq)
+        
+        spatial_prior = False
+        ctm = 'mean'
+        fitK = False
+        bayes(im_file, bval_file, INTERMEDIATE_REGIME, roi_file = roi_file, outbase = outbase, fitK = fitK, n = mcmc_n, ctm = ctm, spatial_prior = spatial_prior,
+                seq=seq, delta_file=delta_file, Delta_file=Delta_file, T_file=T_file, k_file=k_file)
+        
+        test_pars = ['D','f','v','tau','S0']
+        for test_par in test_pars:
+            np.testing.assert_allclose(read_im(outbase + f'_{test_par}.nii.gz')[roi], parmaps[test_par][roi], rtol = rtol, atol = atol[test_par])
+    
     for spatial_prior in [True, False]:
         for ctm in ['mean', 'mode']:
-            for seq in ['monopolar', 'bipolar']:
+            for seq in [BIPOLAR]:
                 for fitK in [True, False]:
                     test_pars = ['D','f','v','tau','S0']
                     if fitK:
@@ -293,7 +304,7 @@ def test_bayes_intermediate():
                         K_file = None
                         test_b = b[b<1000]
 
-                    if False:
+                    if True:
                         test_b = np.tile(test_b, 2)
                         test_delta = delta*np.ones_like(test_b)
                         test_Delta = Delta*np.ones_like(test_b)
@@ -315,13 +326,13 @@ def test_bayes_intermediate():
                             k_file = None
                             T_file = None
                     
-#                    noise(parmap_files['D'], parmap_files['f'], INTERMEDIATE_REGIME, bval_file, 0, outbase, parmap_files['S0'], K_file = K_file, v_file = parmap_files['v'], tau_file=parmap_files['tau'], 
-#                          delta_file=delta_file, Delta_file=Delta_file, T_file=T_file, k_file=k_file, seq=seq)
+                        noise(parmap_files['D'], parmap_files['f'], INTERMEDIATE_REGIME, bval_file, 0, outbase, parmap_files['S0'], K_file = K_file, v_file = parmap_files['v'], tau_file=parmap_files['tau'], 
+                            delta_file=delta_file, Delta_file=Delta_file, T_file=T_file, k_file=k_file, seq=seq)
 
-                    bayes(im_file, bval_file, INTERMEDIATE_REGIME, roi_file = roi_file, outbase = outbase, fitK = fitK, n = mcmc_n, ctm = ctm, spatial_prior = spatial_prior,
-                          seq=seq, delta_file=delta_file, Delta_file=Delta_file, T_file=T_file, k_file=k_file)
-  #                  for test_par in test_pars:
-   #                     np.testing.assert_allclose(read_im(outbase + f'_{test_par}.nii.gz')[roi], parmaps[test_par][roi], rtol = rtol, atol = atol[test_par])
+                        bayes(im_file, bval_file, INTERMEDIATE_REGIME, roi_file = roi_file, outbase = outbase, fitK = fitK, n = mcmc_n, ctm = ctm, spatial_prior = spatial_prior,
+                            seq=seq, delta_file=delta_file, Delta_file=Delta_file, T_file=T_file, k_file=k_file)
+                        for test_par in test_pars:
+                            np.testing.assert_allclose(read_im(outbase + f'_{test_par}.nii.gz')[roi], parmaps[test_par][roi], rtol = rtol, atol = atol[test_par])
 
 
 def test_save_parmaps():
@@ -379,5 +390,3 @@ def test_neighbours():
     expected_mask[2, 0] = 0
 
     np.testing.assert_equal(neighbours(mask), expected_mask)
-
-test_bayes_intermediate()
