@@ -368,7 +368,7 @@ def seg(im_file: str, bval_file: str, regime: str, bthr: float = 200, roi_file: 
     save_parmaps(pars, outbase, im_file, roi_file)
 
 def bayes(im_file: str, bval_file: str, regime: str, roi_file: str | None = None, outbase: str | None = None, verbose: bool = False, fitK: bool = False, 
-          spatial_prior: bool = False, n: int = 2000, burns: int = 1000, ctm: str = 'mean', 
+          spatial_prior: bool = False, n: int = 2000, burns: int = 1000, ctm: str = 'mean', output_std: bool = False,
           cval_file: str | None = None, seq: str = MONOPOLAR, delta_file: str | None = None, Delta_file: str | None = None, T_file: str | None = None, k_file: str | None = None):
     """
     Bayesian fitting of the IVIM model in different regimes
@@ -634,19 +634,27 @@ def bayes(im_file: str, bval_file: str, regime: str, roi_file: str | None = None
             X = np.stack((b, delta, Delta, T, k), axis=1)
     else:
         X = b
-    P,_ = _estimation(fn, Y, X, P0, lims, n=n, burns=burns, ctm=ctm, spatial_prior=spatial_prior, roi=read_im(roi_file), verbose=verbose)
+    P,Pstd = _estimation(fn, Y, X, P0, lims, n=n, burns=burns, ctm=ctm, spatial_prior=spatial_prior, roi=read_im(roi_file), verbose=verbose)
   
     pars = {'D': P[:, 0], 'f': P[:, 1], 'S0': P[:, idxS0]}
+    std = {'D': Pstd[:, 0], 'f': Pstd[:, 1], 'S0': Pstd[:, idxS0]}
     if regime == DIFFUSIVE_REGIME:
         pars['Dstar'] = P[:, 2]
+        std['Dstar'] = Pstd[:, 2]
     if regime == BALLISTIC_REGIME:
         pars['vd'] = P[:, 2]
+        std['vd'] = P[:, 2]
     if regime == INTERMEDIATE_REGIME:
         pars['v'] = P[:, 2]
         pars['tau'] = P[:, 3]
+        std['v'] = Pstd[:, 2]
+        std['tau'] = Pstd[:, 3]
     if fitK:
         pars['K'] = P[:, idxK]
+        std['K'] = Pstd[:, idxK]
     save_parmaps(pars, outbase, im_file, roi_file)
+    if output_std:
+        save_parmaps(std, outbase+'-std', im_file, roi_file)
 
 def save_parmaps(pars: dict, outbase: str | None = None, imref_file: str | None = None, roi_file: str | None = None) -> None:
     """
