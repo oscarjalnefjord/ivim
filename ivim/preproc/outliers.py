@@ -81,6 +81,7 @@ def roi_based(im_file: str, bval_file: str, roi_file: str, outbase: str, regime:
         ax.set_xlabel(r'b [s/mm$^2$]')
         ax.set_ylabel('Signal [a.u]')
         fig.savefig(outbase+'.png')
+        plt.close(fig)
 
     file_from_data(outbase+'.nii.gz', Y[:, idx], read_im(roi_file).astype(bool), imref_file=im_file)
     write_bval(outbase+'.bval', b[idx])
