@@ -1,6 +1,7 @@
-"""Functions for generating noisy image data based on IVIM parameter maps."""
+"""Functions for simulations related to IVIM."""
 
 import numpy as np
+import numpy.typing as npt
 from ivim.models import sIVIM, diffusive, ballistic, intermediate, check_regime, DIFFUSIVE_REGIME, BALLISTIC_REGIME, INTERMEDIATE_REGIME
 from ivim.io.base import write_im, read_im, read_bval, read_cval, write_bval, write_cval, read_time, read_k, write_time, write_k
 from ivim.seq.sde import MONOPOLAR, BIPOLAR
@@ -8,10 +9,10 @@ from ivim.seq.sde import MONOPOLAR, BIPOLAR
 def noise(D_file: str, f_file: str, regime: str, bval_file: str, 
           noise_sigma: float, outbase: str, S0_file: str | None = None, 
           K_file: str | None = None, Dstar_file: str | None = None, 
-          vd_file: str | None = None, cval_file: str | None = None,
-          tau_file: str | None = None, v_file: str | None = None,
-          delta_file: str | None = None, Delta_file: str | None = None, 
-          T_file: str | None = None, seq: str = MONOPOLAR, k_file: str | None = None):
+          v_file: str | None = None, cval_file: str | None = None,
+          tau_file: str | None = None,delta_file: str | None = None, 
+          Delta_file: str | None = None, T_file: str | None = None,
+          seq: str = MONOPOLAR, k_file: str | None = None):
     """
     Generate noisy data for the IVIM model at a given regime and noise level based on IVIM parameter maps.
      
@@ -24,14 +25,10 @@ def noise(D_file: str, f_file: str, regime: str, bval_file: str,
         outbase:     string used to set the file path to out, e.g. '/folder/out' gives '/folder/out.nii.gz' etc.
         S0_file:     (optional) path to nifti file with signal at b = 0, if None S0 = 1
         K_file:      (optional) path to nifti file with kurtosis coefficients
-    ---- diffusive regime ----
         Dstar_file:  (optional) path to nifti file with pseudo diffusion coefficients
-    ---- ballistic regime ----
-        vd_file:     (optional) path to nifti file with velocity dispersion coefficients
+        v_file:      (optional) path to nifti file with velocities
         cval_file:   (optional) path to .cval file
-    ---- intermediate regime ----
         tau_file:    (optional) path to nifti file with correlation times
-        v_file:      (optional) path to nifti file with velocity coefficients
         delta_file:  (optional) path to .delta file
         Delta_file:  (optional) path to .Delta file
         T_file:      (optional) path to .T file
@@ -51,9 +48,9 @@ def noise(D_file: str, f_file: str, regime: str, bval_file: str,
             raise ValueError(f'Dstar must be set for "{DIFFUSIVE_REGIME}" regime.')
         Dstar = read_im(Dstar_file)
     elif regime == BALLISTIC_REGIME:
-        if vd_file is None:
-            raise ValueError(f'vd must be set for "{BALLISTIC_REGIME}" regime.')
-        vd = read_im(vd_file)
+        if v_file is None:
+            raise ValueError(f'v must be set for "{BALLISTIC_REGIME}" regime.')
+        v = read_im(v_file)
     elif regime == INTERMEDIATE_REGIME:
         if v_file is None:
             raise ValueError(f'v must be set for "{INTERMEDIATE_REGIME}" regime.')
@@ -81,7 +78,7 @@ def noise(D_file: str, f_file: str, regime: str, bval_file: str,
     if regime == DIFFUSIVE_REGIME:
         Y = diffusive(b, D, f, Dstar, S0, K)
     elif regime == BALLISTIC_REGIME:
-        Y = ballistic(b, c, D, f, vd, S0, K)
+        Y = ballistic(b, c, D, f, v, S0, K)
     elif regime == INTERMEDIATE_REGIME:
         if seq == BIPOLAR:
             Y = intermediate(b, delta, Delta, D, f, v, tau, S0, K, seq, T, k)
@@ -116,3 +113,33 @@ def noise(D_file: str, f_file: str, regime: str, bval_file: str,
         if seq == BIPOLAR:
             write_time(outbase + '.T', T)
             write_k(outbase + '.k', k)
+
+
+def langevin(sigma_v: float,tau: float, dt: float, m: int, n: int = 100) -> npt.NDArray[np.float64]:
+    """
+    Simulation of random walks (velocities) in 3D according
+    to the Langevin equation:
+
+    .. math:: dv = -vdt/\\tau + \\sqrt{2\\sigma^2_v/\\tau}d\\xi
+
+    where dv is the velocity increment occuring in the time dt, v is the current
+    velocity, tau is the correlation time, :math:`\\sigma_v` is the standard
+    deviation of velocities and :math:`d\\xi` is a Wiener process with
+    autocorrelation :math:`\\langle d\\xi(t)d\\xi(t')\\rangle = \\delta(t-t')dt`.
+
+    Arguments:
+                sigma_v:  standard deviation of the velocities
+                tau:      correlation time
+                dt:       time step (should be substantially larger than tau)
+                m:        number of time steps
+                n:        number of random walkers
+
+    Output:
+                v:        velocities of the walkers (nxmx3 array)
+    """
+
+    v = np.zeros((n,m,3))
+    v[:,0,:] = sigma_v * np.random.randn(n,3)
+    for i in range(1,m):
+        v[:,i,:] = v[:,i-1,:]*(1-dt/tau) + np.sqrt(2*sigma_v**2/tau)*np.random.randn(n,3)*np.sqrt(dt)
+    return v

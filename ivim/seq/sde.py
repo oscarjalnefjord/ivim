@@ -94,3 +94,8 @@ def cval_from_bval(bval_file: str, Delta: float, delta: float, seq: str = MONOPO
     if cval_file == '':
         cval_file = os.path.splitext(bval_file)[0] + '.cval'
     write_cval(cval_file,c)
+
+def check_seq(seq: str) -> None:
+    """ Check that the sequence is valid. """
+    if seq not in [MONOPOLAR, BIPOLAR]:
+        raise ValueError(f'Invalid sequence "{seq}". Valid sequences are "{MONOPOLAR}" and "{BIPOLAR}".')

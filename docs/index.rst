@@ -17,6 +17,7 @@ Contents
    installation
    examples
    fit
+   optimize
    models
    sim
    preproc

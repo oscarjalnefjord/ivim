@@ -12,14 +12,14 @@ Preprocessing
 
 
 ``ivim.preproc.ec_susc``
-#####################
+########################
 
 .. automodule:: ivim.preproc.ec_susc
 .. autofunction:: ivim.preproc.ec_susc.ec_topup
 
 
 ``ivim.preproc.signal_drift``
-#####################
+#############################
 
 .. automodule:: ivim.preproc.signal_drift
 .. autofunction:: ivim.preproc.signal_drift.temporal

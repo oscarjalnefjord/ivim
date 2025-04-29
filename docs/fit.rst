@@ -10,9 +10,3 @@ Model fitting
 .. autofunction:: ivim.fit.seg
 .. autofunction:: ivim.fit.bayes
 
-``ivim.optimize``
-#####################
-
-.. automodule:: ivim.optimize
-.. autofunction:: ivim.optimize.crlb
-

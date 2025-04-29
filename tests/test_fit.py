@@ -108,6 +108,49 @@ def test_nlls_ballistic():
             for test_par in test_pars:
                 np.testing.assert_allclose(read_im(outbase + f'_{test_par}.nii.gz')[roi], parmaps[test_par][roi], rtol = rtol, atol = atol[test_par])
 
+def test_nlls_intermediate():
+    for seq in ['monopolar', 'bipolar']:
+        for fitK in [True, False]:
+            test_pars = ['D','f','v','tau','S0']
+            if fitK:
+                test_pars += ['K']
+                K_file = parmap_files['K']
+                test_b = b
+            else:
+                K_file = None
+                test_b = b[b<1000]
+
+            test_b = np.tile(test_b, 2)
+            test_delta = delta*np.ones_like(test_b)
+            test_Delta = Delta*np.ones_like(test_b)
+            write_bval(bval_file, test_b)
+            delta_file = bval_file.replace('bval', 'delta')
+            write_time(delta_file, test_delta)
+
+
+            if seq == 'bipolar':
+                test_k = np.ones_like(test_b)
+                test_k[:test_b.size//2] = -1
+                test_T = 2*(delta+Delta) + 0.1*np.random.rand(test_b.size)
+                k_file = bval_file.replace('bval', 'k')
+                write_k(k_file, test_k)
+                T_file = bval_file.replace('bval', 'T')
+                write_time(T_file, test_T)
+            else:
+                test_Delta += 0.1*np.random.rand(test_b.size)
+                k_file = None
+                T_file = None
+            Delta_file = bval_file.replace('bval', 'Delta')
+            write_time(Delta_file, test_Delta)
+
+
+            noise(parmap_files['D'], parmap_files['f'], INTERMEDIATE_REGIME, bval_file, 0, outbase, parmap_files['S0'], K_file = K_file, v_file = parmap_files['v'], tau_file = parmap_files['tau'], 
+                  seq = seq, delta_file = delta_file, Delta_file = Delta_file, T_file = T_file, k_file = k_file)
+
+            nlls(im_file, bval_file, INTERMEDIATE_REGIME, roi_file = roi_file, outbase = outbase, fitK = fitK, seq = seq, delta_file = delta_file, Delta_file = Delta_file, T_file = T_file, k_file = k_file)
+            for test_par in test_pars:
+                np.testing.assert_allclose(read_im(outbase + f'_{test_par}.nii.gz')[roi], parmaps[test_par][roi], rtol = rtol, atol = atol[test_par])
+
 def test_seg_sIVIM():
     for bthr in [200, 400, b[-1]]:
         for fitK in [True, False]:
@@ -183,6 +226,12 @@ def test_seg_ballistic():
                     seg(im_file, bval_file, BALLISTIC_REGIME, bthr = bthr, cval_file = cval_file, cthr = cthr, roi_file = roi_file, outbase = outbase, fitK = fitK)
                     for test_par in test_pars:
                         np.testing.assert_allclose(read_im(outbase + f'_{test_par}.nii.gz')[roi], parmaps[test_par][roi], rtol = rtol, atol = atol[test_par])
+
+def test_seg_intermediate():
+    bthr = 200
+    fitK = True
+    with np.testing.assert_raises(ValueError):
+        seg(im_file, bval_file, INTERMEDIATE_REGIME, bthr, roi_file = roi_file, outbase = outbase, fitK = fitK)
 
 def test_bayes_sIVIM():
     bthr = 200

@@ -11,14 +11,15 @@ from ivim.seq.sde import MONOPOLAR, BIPOLAR
 from ivim.misc import halfSampleMode
 from ivim.io.base import data_from_file, file_from_data, read_im, read_time, read_k
 
-def nlls(im_file: str, bval_file: str, regime: str, roi_file: str | None = None, outbase: str | None = None, verbose: bool = False, fitK: bool = False, cval_file: str | None = None) -> None:
+def nlls(im_file: str, bval_file: str, regime: str, roi_file: str | None = None, outbase: str | None = None, verbose: bool = False, fitK: bool = False, 
+         cval_file: str | None = None, seq: str = MONOPOLAR, delta_file: str | None = None, Delta_file: str | None = None, T_file: str | None = None, k_file: str | None = None) -> None:
     """
     NLLS fitting of the IVIM model different regimes.
 
     Arguments:
         im_file:   path to nifti image file
         bval_file: path to .bval file
-        regime:    IVIM regime to model: no (= sIVIM), diffusive (long encoding time) or ballistic (short encoding time)
+        regime:    IVIM regime to model: no (= sIVIM), diffusive (long encoding time), ballistic (short encoding time) or intermediate (multiple encoding times)
         roi_file:  (optional) path to nifti file defining a region-of-interest (ROI) from with data is extracted
         outbase:   (optional) basis for output filenames to which e.g. '_D.nii.gz' is added 
         verbose:   (optional) if True, diagnostics during fitting is printet to terminal
@@ -32,6 +33,13 @@ def nlls(im_file: str, bval_file: str, regime: str, roi_file: str | None = None,
         Y, b, c = data_from_file(im_file, bval_file, cval_file=cval_file, roi_file=roi_file)
     else:
         Y, b = data_from_file(im_file, bval_file, roi_file = roi_file)
+    if regime == INTERMEDIATE_REGIME:
+        delta = read_time(delta_file)
+        Delta = read_time(Delta_file)
+        if seq == BIPOLAR:
+            T = read_time(T_file)
+            k = read_k(k_file)
+
 
     if regime == DIFFUSIVE_REGIME:
         if fitK:
@@ -53,6 +61,23 @@ def nlls(im_file: str, bval_file: str, regime: str, roi_file: str | None = None,
                 b = X[:, 0]
                 c = X[:, 1]
                 return ballistic(b, c, D, f, vd, S0).squeeze()
+    elif regime == INTERMEDIATE_REGIME:
+        if fitK:
+            def fn(X, D, f, v, tau, S0, K):
+                if seq == MONOPOLAR:
+                    b, delta, Delta = X[:, 0], X[:, 1], X[:, 2]
+                    return intermediate(b, delta, Delta, D, f, v, tau, S0, K).squeeze()
+                else:
+                    b, delta, Delta, T, k = X[:, 0], X[:, 1], X[:, 2], X[:, 3], X[:, 4]
+                    return intermediate(b, delta, Delta, D, f, v, tau, S0, K, seq=seq, T=T, k=k).squeeze()
+        else:
+            def fn(X, D, f, v, tau, S0):
+                if seq == MONOPOLAR:
+                    b, delta, Delta = X[:, 0], X[:, 1], X[:, 2]
+                    return intermediate(b, delta, Delta, D, f, v, tau, S0).squeeze()
+                else:
+                    b, delta, Delta, T, k = X[:, 0], X[:, 1], X[:, 2], X[:, 3], X[:, 4]
+                    return intermediate(b, delta, Delta, D, f, v, tau, S0, seq=seq, T=T, k=k).squeeze()
     else:
         if fitK:
             def fn(X, D, f, S0, K):    
@@ -65,10 +90,15 @@ def nlls(im_file: str, bval_file: str, regime: str, roi_file: str | None = None,
 
     if regime == BALLISTIC_REGIME:
         X = np.stack((b, c), axis=1)
+    elif regime == INTERMEDIATE_REGIME:
+        if seq == MONOPOLAR:
+            X = np.stack((b, delta, Delta), axis=1)
+        else:
+            X = np.stack((b, delta, Delta, T, k), axis=1)
     else:
         X = b
     mask = valid_signal(Y)
-    npars = 4 + fitK - (regime == NO_REGIME)
+    npars = 4 + fitK - (regime == NO_REGIME) + (regime == INTERMEDIATE_REGIME)
     P = np.full((mask.size, npars), np.nan)
 
     for i, y in enumerate(Y):
@@ -80,6 +110,11 @@ def nlls(im_file: str, bval_file: str, regime: str, roi_file: str | None = None,
         if regime == BALLISTIC_REGIME:
             p0.insert(2, 2.0)
             bounds = np.insert(bounds, 2, [0, 5], axis = 1)
+        if regime == INTERMEDIATE_REGIME:
+            p0.insert(2, 2.0)
+            p0.insert(3, 0.1)
+            bounds = np.insert(bounds, 2, [0, 5], axis = 1)
+            bounds = np.insert(bounds, 3, [0.001, 1], axis = 1)
         if fitK:
             p0.append(1.0)
             bounds = np.hstack((bounds, np.array([0, 5])[:, np.newaxis]))
@@ -105,6 +140,11 @@ def nlls(im_file: str, bval_file: str, regime: str, roi_file: str | None = None,
         pars['vd'] = P[:, 2]
         idxS0 = 3
         idxK = 4
+    elif regime == INTERMEDIATE_REGIME:
+        pars['v'] = P[:, 2]
+        pars['tau'] = P[:, 3]
+        idxS0 = 4
+        idxK = 5
     else:
         idxS0 = 2
         idxK = 3
@@ -329,6 +369,8 @@ def seg(im_file: str, bval_file: str, regime: str, bthr: float = 200, roi_file: 
         return diff, ratio
     
     check_regime(regime)
+    if regime == INTERMEDIATE_REGIME:
+        raise ValueError('Segmented fitting is not implemented for the intermediate regime!')
 
     if regime == BALLISTIC_REGIME:
         Y, b, c = data_from_file(im_file, bval_file, cval_file=cval_file, roi_file=roi_file)
@@ -376,7 +418,7 @@ def bayes(im_file: str, bval_file: str, regime: str, roi_file: str | None = None
     Arguments:
         im_file:       path to nifti image file
         bval_file:     path to .bval file
-        regime:        IVIM regime to model: no (= sIVIM), diffusive (long encoding time) or ballistic (short encoding time)
+        regime:        IVIM regime to model: no (= sIVIM), diffusive (long encoding time), ballistic (short encoding time) or intermediate (multiple encoding times)
         roi_file:      (optional) path to nifti file defining a region-of-interest (ROI) from with data is extracted
         outbase:       (optional) basis for output filenames to which e.g. '_D.nii.gz' is added 
         verbose:       (optional) if True, diagnostics during fitting is printet to terminal

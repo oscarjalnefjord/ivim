@@ -9,3 +9,5 @@ Modeling
 .. autofunction:: ivim.models.sIVIM
 .. autofunction:: ivim.models.diffusive
 .. autofunction:: ivim.models.ballistic
+.. autofunction:: ivim.models.monoexp
+        
