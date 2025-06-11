@@ -275,25 +275,33 @@ def crlb(D: npt.NDArray[np.float64], f: npt.NDArray[np.float64], regime: str,
     mincost = np.inf
     for nfc in range(1+(nb-2)*(seq == BIPOLAR)):
         cost_regime = lambda x: cost(x, int(regime == NO_REGIME), nfc, nt)
-        res = minimize(cost_regime, x0, bounds = bounds, constraints = constraints, method = 'SLSQP', jac = '3-point')
-        if res.fun < mincost:
+        try:
+            res = minimize(cost_regime, x0, bounds = bounds, constraints = constraints, method = 'SLSQP', jac = '3-point')
+        except:
+            x = x0
+            fun = mincost
+            print('Warning: Numerical instabilities')
+        else:
+            x = res.x
+            fun = res.fun
+        if fun < mincost:
             b = np.zeros(nb+(regime == NO_REGIME))
-            b[(regime == NO_REGIME):] = res.x[:nb]
-            a = res.x[nb:nb+na]
+            b[(regime == NO_REGIME):] = x[:nb]
+            a = x[nb:nb+na]
             if seq == BIPOLAR:
                 fc = np.full(b.size, False)
                 if nfc > 0:
                     fc[-nfc:] = True
             if (regime == BALLISTIC_REGIME) or (regime == INTERMEDIATE_REGIME):
                 if (regime == INTERMEDIATE_REGIME) and (seq == MONOPOLAR):
-                    delta = res.x[nb+na:nb+na+nt//2]
-                    Delta = res.x[nb+na+nt//2:]
+                    delta = x[nb+na:nb+na+nt//2]
+                    Delta = x[nb+na+nt//2:]
                 else:
-                    delta = res.x[nb+na]
-                    Delta = res.x[nb+na+1]
+                    delta = x[nb+na]
+                    Delta = x[nb+na+1]
                     if regime == INTERMEDIATE_REGIME: # and seq == BIPOLAR
-                        T = res.x[nb+na+2:]
-            mincost = res.fun
+                        T = x[nb+na+2:]
+            mincost = fun
     if mincost == np.inf:
         raise Warning('No optimum found. Returning nan')
         return np.nan
