@@ -1,6 +1,6 @@
 import numpy as np
 from ivim.constants import Db, y
-from ivim.seq.sde import G_from_b, calc_c, MONOPOLAR, BIPOLAR
+from ivim.seq.lte import G_from_b, calc_c, MONOPOLAR, BIPOLAR
 from ivim.models import (monoexp, monoexp_jacobian, kurtosis, kurtosis_jacobian, 
                          sIVIM, sIVIM_jacobian, ballistic, ballistic_jacobian,
                          diffusive, diffusive_jacobian, intermediate, intermediate_jacobian, 

@@ -6,7 +6,7 @@ import numpy as np
 import numpy.typing as npt
 from scipy.optimize import minimize, Bounds, curve_fit
 from ivim.models import sIVIM, diffusive, ballistic, intermediate, sIVIM_jacobian, diffusive_jacobian, ballistic_jacobian, intermediate_jacobian, check_regime, NO_REGIME, DIFFUSIVE_REGIME, BALLISTIC_REGIME, INTERMEDIATE_REGIME
-from ivim.seq.sde import calc_b, calc_c, G_from_b, MONOPOLAR, BIPOLAR, check_seq
+from ivim.seq.lte import calc_b, calc_c, G_from_b, MONOPOLAR, BIPOLAR, check_seq
 from ivim.constants import y
 
 def crlb(D: npt.NDArray[np.float64], f: npt.NDArray[np.float64], regime: str, 
@@ -19,21 +19,18 @@ def crlb(D: npt.NDArray[np.float64], f: npt.NDArray[np.float64], regime: str,
     Optimize b-values (and possibly c-values) using Cramer-Rao lower bounds optmization.
 
     Arguments:
-        D:           diffusion coefficients to optimize over [mm2/s]
-        f:           perfusion fractions to optimize over (same size as D)
-        regime:      IVIM regime to model: no (= sIVIM), diffusive (long encoding time) or ballistic (short encoding time)
-        bmax:        (optional) the largest b-value that can be returned by the optimization
-        fitK:        (optional) if True, optimize with the intention to be able to fit K in addition to D and f
-        minbias:     (optional) if True, include a bias term in cost function. Requires some of the remaining optional arguments
-        bias_regime: (optional) specifies model to use for bias term
-        K:           (optional) kurtosis coefficients to optimize over if fitK and for bias term if minbias
-        SNR:         (optional) expected SNR level at b = 0 to be used to scale the influence of the bias term
-        bthr:        (optional) the smallest non-zero b-value that can be returned by the optimization
-        Dstar:       (optional) pseudodiffusion coefficients for optimization and/or bias term [mm/s]
-        v:           (optional) velocity dispersion coefficient for optimization and/or bias term [mm/s]
-        seq:         (optional) type of diffusion encoding gradient, 'monopolar' or 'bipolar'
-        delta:       (optional) duration of diffusion encoding gradients [s]
-        Delta:       (optional) separation of diffusion encoding gradients [s]
+        D:                  diffusion coefficients to optimize over [mm\ :sup:`2`/s]
+        f:                  perfusion fractions to optimize over (same size as D)
+        regime:             IVIM regime to model: no (= sIVIM), diffusive (long encoding time) or ballistic (short encoding time)
+        bmax:               (optional) the largest b-value that can be returned by the optimization
+        fitK:               (optional) if True, optimize with the intention to be able to fit K in addition to D and f
+        K:                  (optional) kurtosis coefficients to optimize over if fitK and for bias term if minbias
+        bthr:               (optional) the smallest non-zero b-value that can be returned by the optimization
+        Dstar:              (optional) pseudodiffusion coefficients [mm\ :sup:`2`/s]
+        v:                  (optional) velocity for optimization and/or bias term [mm/s]
+        tau:                (optional) correlation times [s]
+        seq:                (optional) type of diffusion encoding gradient, 'monopolar' or 'bipolar'
+        system_constraints: (optional) dictionary with system constraints (key: 'Gmax','t180','risetime')
     
     Output:
         b:           optimized b-values
@@ -44,7 +41,15 @@ def crlb(D: npt.NDArray[np.float64], f: npt.NDArray[np.float64], regime: str,
     Examples
     --------
 
-    >>> crlb()
+    >>> D = [1e-3,1.1e-3]
+    >>> f = [0.1,0.15]
+    >>> Dstar = [20e-3,20e-3]
+    >>> bmax = 800
+    >>> b,a = crlb(D,f,'diffusive',bmax=bmax,Dstar=Dstar)
+    >>> print(b)
+    [  0.          39.3715187  199.80682516 800.        ]
+    >>> print(a)
+    [0.15952579 0.30527184 0.35411006 0.18109231]
 
     """
 
@@ -122,88 +127,14 @@ def crlb(D: npt.NDArray[np.float64], f: npt.NDArray[np.float64], regime: str,
         
         return C
 
-    def soma(cfun, bounds, idx_a, psize, migrations, constraints = (), step = 0.5, path = 3):
-        def const_ok(x):
-            ok = True
-            for constraint in constraints:
-                if constraint['type'] == 'ineq':
-                    ok &= np.all(constraint['fun'](x) > 0)
-                elif constraint['type'] == 'eq':
-                    ok &= np.all(np.abs(constraint['fun'](x)) < 1e-5)
-            return ok
-
-        def identify_leader(X):
-            cmin = np.inf
-            idx_leader = 0
-            for i in range(X.shape[0]):
-                if const_ok(X[i,:]) and (cfun(X[i,:]) < cmin):
-                    idx_leader = i
-            return idx_leader, cfun(X[idx_leader])
-
-        n = bounds[0].size
-        na = idx_a.size
-        nb = np.min(idx_a)
-        bmin = np.min(bounds[0][:nb])
-        bmax = np.max(bounds[1][:nb])
-        tmin = np.min(bounds[0][na+nb:])
-        tmax = np.max(bounds[1][na+nb:])
-        chist = np.zeros(migrations)
-
-        # generate initial population and find the leader
-        X = np.random.rand(psize, n)
-        X[:,idx_a] /= np.sum(X[:,idx_a],axis=1)[:,np.newaxis] # a sum to 1
-        for idx in range(X.shape[0]):
-            X[idx,:nb] = bmin + (bmax-bmin)*np.random.rand(nb)
-            if n > (na+nb):
-                X[idx,na+nb:] = tmin + (tmax-tmin)*np.random.rand(n-na-nb)
-        idx_leader,chist[0] = identify_leader(X)
-
-        # migrate
-        for m in range(1,migrations):
-            # migrate each individual towards the leader
-            for idx in range(X.shape[0]):
-                if idx == idx_leader:
-                    continue
-            
-                x0 = X[idx,:].copy()
-                x = X[idx,:].copy()
-                for pi, p in enumerate(np.arange(path,step)):
-                    # take a step in a random (single) direction towards the leader
-                    v = np.random.randint(X.shape[1])
-                    x[v] = x0[v] + (X[idx_leader,v] - x0)*p
-                    x[idx_a] /= np.sum(x[idx_a])
-
-                    # check that the step was valid
-                    bmask = (x < bounds[0]) | (x > bounds[1]) 
-                    if np.any(bmask):
-                        x[bmask] = bounds[0][bmask] + (bounds[1]-bounds[0])[bmask]*np.random.rand(np.sum(bmask))
-                    
-                    if (cfun(x) < cfun(x0)):
-                        X[idx,:] = x
-
-
-            # find the new leader
-            idx_leader, chist[m] = identify_leader(X)
-
-            # potential early stop
-
-
-        return x, chist
-
     check_regime(regime)
     check_seq(seq)
     for key, value in system_constraints.items():
         if key not in ['Gmax','t180','risetime']:
             raise ValueError(f'Unknown system constraint parameter "{key}" given.')
 
-#    if regime == NO_REGIME:
-#        if bias_regime not in [DIFFUSIVE_REGIME, BALLISTIC_REGIME]:
-#            raise ValueError(f'bias_regime must be "{DIFFUSIVE_REGIME}" or "{BALLISTIC_REGIME}"')
-#    elif (regime == DIFFUSIVE_REGIME) or (regime == BALLISTIC_REGIME):
-#        if fitK:
-#            raise ValueError(f'CRLB optimization in the {regime} regime fit kurtosis fit is not available due to numerical instabilities.')
-#        if minbias:
-#            raise ValueError(f'CRLB optimization in the {regime} regime with a bias term is not available due to numerical instabilities.')
+    if ((regime == DIFFUSIVE_REGIME) or (regime == BALLISTIC_REGIME)) and fitK:
+        raise ValueError(f'CRLB optimization in the {regime} regime with kurtosis fit is not available due to numerical instabilities.')
     
     # Start values
     if regime == NO_REGIME:
@@ -344,8 +275,6 @@ def crlb(D: npt.NDArray[np.float64], f: npt.NDArray[np.float64], regime: str,
     mincost = np.inf
     for nfc in range(1+(nb-2)*(seq == BIPOLAR)):
         cost_regime = lambda x: cost(x, int(regime == NO_REGIME), nfc, nt)
-#        res = soma(cost_regime, [lb,ub], np.arange(nb,nb+na), psize=1000, migrations=20, constraints = constraints, step = 0.5, path = 3)
-#        print(res)
         res = minimize(cost_regime, x0, bounds = bounds, constraints = constraints, method = 'SLSQP', jac = '3-point')
         if res.fun < mincost:
             b = np.zeros(nb+(regime == NO_REGIME))

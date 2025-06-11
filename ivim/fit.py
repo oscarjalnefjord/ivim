@@ -7,24 +7,29 @@ from ivim.models import sIVIM, diffusive, ballistic, intermediate, NO_REGIME, DI
 from ivim.models import monoexp as monoexp_model
 from ivim.models import kurtosis as kurtosis_model
 from ivim.constants import Db
-from ivim.seq.sde import MONOPOLAR, BIPOLAR
+from ivim.seq.lte import MONOPOLAR, BIPOLAR
 from ivim.misc import halfSampleMode
 from ivim.io.base import data_from_file, file_from_data, read_im, read_time, read_k
 
 def nlls(im_file: str, bval_file: str, regime: str, roi_file: str | None = None, outbase: str | None = None, verbose: bool = False, fitK: bool = False, 
          cval_file: str | None = None, seq: str = MONOPOLAR, delta_file: str | None = None, Delta_file: str | None = None, T_file: str | None = None, k_file: str | None = None) -> None:
     """
-    NLLS fitting of the IVIM model different regimes.
+    NLLS fitting of the IVIM model in different regimes.
 
     Arguments:
-        im_file:   path to nifti image file
-        bval_file: path to .bval file
-        regime:    IVIM regime to model: no (= sIVIM), diffusive (long encoding time), ballistic (short encoding time) or intermediate (multiple encoding times)
-        roi_file:  (optional) path to nifti file defining a region-of-interest (ROI) from with data is extracted
-        outbase:   (optional) basis for output filenames to which e.g. '_D.nii.gz' is added 
-        verbose:   (optional) if True, diagnostics during fitting is printet to terminal
-        fitK:      (optional) if True, the kurtosis signal representation is used instead of a monoexponential one in the first step
-        cval_file: (optional) path to .cval file
+        im_file:    path to nifti image file
+        bval_file:  path to .bval file
+        regime:     IVIM regime to model: no (= sIVIM), diffusive (long encoding time), ballistic (short encoding time) or intermediate (multiple encoding times)
+        roi_file:   (optional) path to nifti file defining a region-of-interest (ROI) from with data is extracted
+        outbase:    (optional) basis for output filenames to which e.g. '_D.nii.gz' is added 
+        verbose:    (optional) if True, diagnostics during fitting is printet to terminal
+        fitK:       (optional) if True, the kurtosis signal representation is used instead of a monoexponential one in the first step
+        cval_file:  (optional) path to .cval file
+        seq:        (optional) diffusion encoding sequence type (monopolar or bipolar)
+        delta_file: (optional) path to .delta file (gradient duration)
+        Delta_file: (optional) path to .Delta file (gradient separation)
+        T_file:     (optional) path to .T file (total encoding time)
+        k_file:     (optional) path to .k file (flow-/non-flow-compensated)
     """
 
     check_regime(regime)
@@ -52,15 +57,15 @@ def nlls(im_file: str, bval_file: str, regime: str, roi_file: str | None = None,
                 return diffusive(b, D, f, Dstar, S0).squeeze()
     elif regime == BALLISTIC_REGIME:
         if fitK:
-            def fn(X, D, f, vd, S0, K):
+            def fn(X, D, f, v, S0, K):
                 b = X[:, 0]
                 c = X[:, 1]
-                return ballistic(b, c, D, f, vd, S0, K).squeeze()
+                return ballistic(b, c, D, f, v, S0, K).squeeze()
         else:
-            def fn(X, D, f, vd, S0):
+            def fn(X, D, f, v, S0):
                 b = X[:, 0]
                 c = X[:, 1]
-                return ballistic(b, c, D, f, vd, S0).squeeze()
+                return ballistic(b, c, D, f, v, S0).squeeze()
     elif regime == INTERMEDIATE_REGIME:
         if fitK:
             def fn(X, D, f, v, tau, S0, K):
@@ -137,7 +142,7 @@ def nlls(im_file: str, bval_file: str, regime: str, roi_file: str | None = None,
         idxS0 = 3
         idxK = 4
     elif regime == BALLISTIC_REGIME:
-        pars['vd'] = P[:, 2]
+        pars['v'] = P[:, 2]
         idxS0 = 3
         idxK = 4
     elif regime == INTERMEDIATE_REGIME:
@@ -392,7 +397,8 @@ def seg(im_file: str, bval_file: str, regime: str, bthr: float = 200, roi_file: 
         Dstar, Astar = _monoexp(Ysub, b, lim=[3e-3, 0.1], validate = False, verbose = verbose)
         S0 = A + Astar
     elif regime == BALLISTIC_REGIME:
-        vd2, Astar = _monoexp(Ysub, c**2, lim=[0, 25], validate=False, verbose=verbose)
+        v2, Astar = _monoexp(Ysub, c**2, lim=[0, 25], validate=False, verbose=verbose)
+        v2 *= 6
         S0 = A + Astar
     else:
         S0 = _get_S0(Y, b)
@@ -403,7 +409,7 @@ def seg(im_file: str, bval_file: str, regime: str, bthr: float = 200, roi_file: 
     if regime == DIFFUSIVE_REGIME:
         pars['Dstar'] = Dstar
     elif regime == BALLISTIC_REGIME:
-        pars['vd'] = np.sqrt(vd2)
+        pars['v'] = np.sqrt(v2)
     pars['S0'] = S0
     if fitK:
         pars['K'] = K
@@ -428,6 +434,11 @@ def bayes(im_file: str, bval_file: str, regime: str, roi_file: str | None = None
         burns:         (optional) number of MCMC iterations before sampling
         ctm:           (optional) central tendency measure (mean or mode) used to summarize the posterior parameter distributions
         cval_file:     (optional) path to .cval file
+        seq:            (optional) diffusion encoding sequence type (monopolar or bipolar)
+        delta_file:     (optional) path to .delta file (gradient duration)
+        Delta_file:     (optional) path to .Delta file (gradient separation)
+        T_file:         (optional) path to .T file (total encoding time)
+        k_file:         (optional) path to .k file (flow-/non-flow-compensated)
     """
 
     def _estimation(fn, Y, X, P0, lims, n=500, burns=500, ctm='mean', spatial_prior = False, roi=None, verbose=False):
@@ -598,14 +609,14 @@ def bayes(im_file: str, bval_file: str, regime: str, roi_file: str | None = None
     elif regime == BALLISTIC_REGIME:
         if fitK:
             def fn(X, P):
-                D, f, vd, S0, K = P[:, 0], P[:, 1], P[:, 2], P[:, 3], P[:, 4]
+                D, f, v, S0, K = P[:, 0], P[:, 1], P[:, 2], P[:, 3], P[:, 4]
                 b, c = X[:, 0], X[:, 1]
-                return ballistic(b, c, D, f, vd, S0, K)
+                return ballistic(b, c, D, f, v, S0, K)
         else:
             def fn(X, P):
-                D, f, vd, S0 = P[:, 0], P[:, 1], P[:, 2], P[:, 3]
+                D, f, v, S0 = P[:, 0], P[:, 1], P[:, 2], P[:, 3]
                 b, c = X[:, 0], X[:, 1]
-                return ballistic(b, c, D, f, vd, S0)
+                return ballistic(b, c, D, f, v, S0)
     elif regime == INTERMEDIATE_REGIME:
         if fitK:
             def fn(X, P):
@@ -682,7 +693,7 @@ def bayes(im_file: str, bval_file: str, regime: str, roi_file: str | None = None
     if regime == DIFFUSIVE_REGIME:
         pars['Dstar'] = P[:, 2]
     if regime == BALLISTIC_REGIME:
-        pars['vd'] = P[:, 2]
+        pars['v'] = P[:, 2]
     if regime == INTERMEDIATE_REGIME:
         pars['v'] = P[:, 2]
         pars['tau'] = P[:, 3]

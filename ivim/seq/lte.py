@@ -22,7 +22,7 @@ def calc_b(G: npt.NDArray[np.float64], Delta: float, delta: float, seq: str = MO
         seq:   (optional) pulse sequence (monopolar or bipolar)
 
     Output:
-        b:     b-value [s/mm2]
+        b:     b-value [s/mm\ :sup:`2`]
     """
 
     b = y**2 * G**2 * delta**2 * (Delta-delta/3)
@@ -62,10 +62,10 @@ def calc_c(G: npt.NDArray[np.float64], Delta: float, delta:float, seq: str = MON
 
 def G_from_b(b: npt.NDArray[np.float64], Delta: float, delta: float, seq: str = MONOPOLAR) -> npt.NDArray[np.float64]:
     """
-    Calculate c-value (flow encoding) given other relevant pulse sequence parameters.
+    Calculate gradient strength given other relevant pulse sequence parameters.
 
     Arguments:
-        G:     gradient strength      [T/mm] (Note the units preferred to get b-values in commonly used unit)
+        b:     b-value [s/mm\ :sup:`2`]
         Delta: gradient separation    [s]
         delta: gradient duration      [s]
         seq:   (optional) pulse sequence (monopolar or bipolar)

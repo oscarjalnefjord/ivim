@@ -1,9 +1,12 @@
-""" Functions to generate MR signal and corresponding Jacobians based on IVIM parameters. """
+""" 
+This module provides functions to generate MR signal and corresponding Jacobians based on IVIM 
+parameters. 
+"""
 
 import numpy as np
 import numpy.typing as npt
 from ivim.constants import Db, y
-from ivim.seq.sde import MONOPOLAR, BIPOLAR, G_from_b
+from ivim.seq.lte import MONOPOLAR, BIPOLAR, G_from_b
 
 NO_REGIME = 'no'
 DIFFUSIVE_REGIME = 'diffusive'
@@ -28,11 +31,11 @@ def monoexp(b: npt.NDArray[np.float64], D: npt.NDArray[np.float64]) -> npt.NDArr
 
 def kurtosis(b: npt.NDArray[np.float64], D: npt.NDArray[np.float64], K: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
     """
-    Return the kurtosis signal representation.
+    Return the kurtosis signal representation :math:`e^{-bD+b^2D^2K/6}`.
     
     Arguments: 
-        b: vector of b-values [s/mm2]
-        D: ND array of diffusion coefficients [mm2/s]
+        b: vector of b-values [s/mm\ :sup:`2`]
+        D: ND array of diffusion coefficients [mm\ :sup:`2`/s]
         K: ND array of kurtosis coefficients (same shape as D or scalar)
 
     Output:
@@ -47,10 +50,10 @@ def kurtosis(b: npt.NDArray[np.float64], D: npt.NDArray[np.float64], K: npt.NDAr
 def sIVIM(b: npt.NDArray[np.float64], D: npt.NDArray[np.float64], f: npt.NDArray[np.float64], S0: npt.NDArray[np.float64] = 1, K: npt.NDArray[np.float64] = 0) -> npt.NDArray[np.float64]:
     """
     Return MR signal based on the simplified IVIM (sIVIM) model.
-    
+
     Arguments: 
-        b:  vector of b-values [s/mm2]
-        D:  ND array of diffusion coefficients [mm2/s]
+        b:  vector of b-values [s/mm\ :sup:`2`]
+        D:  ND array of diffusion coefficients [mm\ :sup:`2`/s]
         f:  ND array of perfusion fractions (same shape as D or scalar)
         S0: (optional) ND array of signal values at b == 0 (same shape as D or scalar)
         K:  (optional) ND array of kurtosis coefficients (same shape as D or scalar)
@@ -64,12 +67,12 @@ def sIVIM(b: npt.NDArray[np.float64], D: npt.NDArray[np.float64], f: npt.NDArray
 
 def ballistic(b: npt.NDArray[np.float64], c: npt.NDArray[np.float64], D: npt.NDArray[np.float64], f: npt.NDArray[np.float64], v: npt.NDArray[np.float64], S0: npt.NDArray[np.float64] = 1, K: npt.NDArray[np.float64] = 0) -> npt.NDArray[np.float64]:
     """
-    Return MR signal based on the ballistic IVIM model.
+    Return MR signal based on the ballistic IVIM model with :math:`F_P = e^{-c^2v^2/6}`.
     
     Arguments: 
-        b:  vector of b-values [s/mm2]
+        b:  vector of b-values [s/mm\ :sup:`2`]
         c:  vector of c-values [s/mm]
-        D:  ND array of diffusion coefficients [mm2/s]
+        D:  ND array of diffusion coefficients [mm\ :sup:`2`/s]
         f:  ND array of perfusion fractions (same shape as D or scalar)
         v:  ND array of velocities [mm/s] (same shape as D or scalar)
         S0: (optional) ND array of signal values at b == 0 (same shape as D or scalar)
@@ -84,11 +87,11 @@ def ballistic(b: npt.NDArray[np.float64], c: npt.NDArray[np.float64], D: npt.NDA
 
 def diffusive(b: npt.NDArray[np.float64], D: npt.NDArray[np.float64], f: npt.NDArray[np.float64], Dstar: npt.NDArray[np.float64], S0: npt.NDArray[np.float64] = 1, K: npt.NDArray[np.float64] = 0) -> npt.NDArray[np.float64]:
     """
-    Return MR signal based on the diffusive IVIM model.
+    Return MR signal based on the diffusive IVIM model with :math:`F_P = e^{-bD^*}`.
     
     Arguments: 
-        b:     vector of b-values [s/mm2]
-        D:     ND array of diffusion coefficients [mm2/s]
+        b:     vector of b-values [s/mm\ :sup:`2`]
+        D:     ND array of diffusion coefficients [mm\ :sup:`2`/s]
         f:     ND array of perfusion fractions (same shape as D or scalar)
         Dstar: ND array of pseudo-diffusion coefficients [mm2/s] (same shape as D or scalar)
         S0:    (optional) ND array of signal values at b == 0 (same shape as D or scalar)
@@ -106,10 +109,10 @@ def intermediate(b: npt.NDArray[np.float64], delta: npt.NDArray[np.float64], Del
     Return MR signal based on the intermediate IVIM model.
     
     Arguments: 
-        b:     vector of b-values [s/mm2]
+        b:     vector of b-values [s/mm\ :sup:`2`]
         delta: vector of gradient durations [s]
         Delta: vector of gradient separations [s]
-        D:     ND array of diffusion coefficients [mm2/s]
+        D:     ND array of diffusion coefficients [mm\ :sup:`2`/s]
         f:     ND array of perfusion fractions (same shape as D or scalar)
         v:     ND array of velocities [mm/s] (same shape as D or scalar)
         tau:   ND array of correlation times [s] (same shape as D or scalar)
@@ -151,12 +154,10 @@ def intermediate(b: npt.NDArray[np.float64], delta: npt.NDArray[np.float64], Del
 def monoexp_jacobian(b: npt.NDArray[np.float64], D: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
     """ 
     Return the Jacobian matrix for the monoexponential expression.
-    
-    S(b) = exp(-b*D)
 
     Arguments:
-        b: vector of b-values [s/mm2]
-        D: ND array of diffusion coefficients [mm2/s]
+        b: vector of b-values [s/mm\ :sup:`2`]
+        D: ND array of diffusion coefficients [mm\ :sup:`2`/s]
 
     Output: 
         J: Jacobian matrix
@@ -168,12 +169,10 @@ def monoexp_jacobian(b: npt.NDArray[np.float64], D: npt.NDArray[np.float64]) -> 
 def kurtosis_jacobian(b: npt.NDArray[np.float64], D: npt.NDArray[np.float64], K: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
     """ 
     Return the Jacobian matrix for the monoexponential expression.
-    
-    S(b) = exp(-b*D + b**2*D**2*K/6)
 
     Arguments:
-        b: vector of b-values [s/mm2]
-        D: ND array of diffusion coefficients [mm2/s]
+        b: vector of b-values [s/mm\ :sup:`2`]
+        D: ND array of diffusion coefficients [mm\ :sup:`2`/s]
         K: ND array of kurtosis coefficients (same shape as D or scalar)
 
     Output: 
@@ -191,12 +190,10 @@ def kurtosis_jacobian(b: npt.NDArray[np.float64], D: npt.NDArray[np.float64], K:
 def sIVIM_jacobian(b: npt.NDArray[np.float64], D: npt.NDArray[np.float64], f: npt.NDArray[np.float64], S0: npt.NDArray[np.float64] | None = None, K: npt.NDArray[np.float64] | None = None) -> npt.NDArray[np.float64]:
     """
     Return the Jacobian matrix for the simplified IVIM (sIVIM) model.
-    
-    S(b) = S0((1-f)*exp(-b*D+b^2*D^2*K/6)+fδ(b))
 
     Arguments: 
-        b:  vector of b-values [s/mm2]
-        D:  ND array of diffusion coefficients [mm2/s]
+        b:  vector of b-values [s/mm\ :sup:`2`]
+        D:  ND array of diffusion coefficients [mm\ :sup:`2`/s]
         f:  ND array of perfusion fractions (same shape as D or scalar)
         S0: (optional) ND array of signal values at b == 0 (same shape as D or scalar)
         K:  (optional) ND array of kurtosis coefficients (same shape as D or scalar)
@@ -241,13 +238,11 @@ def sIVIM_jacobian(b: npt.NDArray[np.float64], D: npt.NDArray[np.float64], f: np
 def ballistic_jacobian(b:  npt.NDArray[np.float64], c: npt.NDArray[np.float64], D: npt.NDArray[np.float64], f: npt.NDArray[np.float64], v: npt.NDArray[np.float64], S0: npt.NDArray[np.float64] | None = None, K: npt.NDArray[np.float64] | None = None) -> npt.NDArray[np.float64]:
     """
     Return the Jacobian matrix for the ballistic IVIM model.
-    
-    S(b) = S0((1-f)*exp(-b*D+b^2*D^2*K/6)+f*exp(-b*Db-v^2*c*2/6))
 
     Arguments: 
-        b:  vector of b-values [s/mm2]
+        b:  vector of b-values [s/mm\ :sup:`2`]
         c:  vector of c-values [s/mm]
-        D:  ND array of diffusion coefficients [mm2/s]
+        D:  ND array of diffusion coefficients [mm\ :sup:`2`/s]
         f:  ND array of perfusion fractions (same shape as D or scalar)
         v:  ND array of velocities [mm/s] (same shape as D or scalar)
         S0: (optional) ND array of signal values at b == 0 (same shape as D or scalar)
@@ -291,12 +286,10 @@ def ballistic_jacobian(b:  npt.NDArray[np.float64], c: npt.NDArray[np.float64], 
 def diffusive_jacobian(b: npt.NDArray[np.float64], D: npt.NDArray[np.float64], f: npt.NDArray[np.float64], Dstar: npt.NDArray[np.float64], S0: npt.NDArray[np.float64] | None = None, K: npt.NDArray[np.float64] | None = None) -> npt.NDArray[np.float64]:
     """
     Return the Jacobian matrix for the diffusive IVIM model.
-    
-    S(b) = S0((1-f)*exp(-b*D+b^2*D^2*K/6)+f*exp(-b*(D*+Db)))
 
     Arguments: 
-        b:     vector of b-values [s/mm2]
-        D:     ND array of diffusion coefficients [mm2/s]
+        b:     vector of b-values [s/mm\ :sup:`2`]
+        D:     ND array of diffusion coefficients [mm\ :sup:`2`/s]
         f:     ND array of perfusion fractions (same shape as D or scalar)
         Dstar: ND array of perfusion fractions (same shape as D or scalar)
         S0:    (optional) ND array of signal values at b == 0 (same shape as D or scalar)
@@ -344,16 +337,15 @@ def intermediate_jacobian(b:  npt.NDArray[np.float64], delta: npt.NDArray[np.flo
                           ) -> npt.NDArray[np.float64]:
     """
     Return the Jacobian matrix for the ballistic IVIM model.
-    
-    S(b) = S0((1-f)*exp(-b*D+b^2*D^2*K/6)+f*exp(-b*Db)Fp
 
     Arguments: 
-        b:      vector of b-values [s/mm2]
+        b:      vector of b-values [s/mm\ :sup:`2`]
         delta:  vector of deltas [s]
         Delta:  vector of deltas [s]
-        D:      ND array of diffusion coefficients [mm2/s]
+        D:      ND array of diffusion coefficients [mm\ :sup:`2`/s]
         f:      ND array of perfusion fractions (same shape as D or scalar)
         v:      ND array of velocity [mm/s] (same shape as D or scalar)
+        tau:   ND array of correlation times [s] (same shape as D or scalar)
         S0:     (optional) ND array of signal values at b == 0 (same shape as D or scalar)
         K:      (optional) ND array of kurtosis coefficients (same shape as D or scalar)
         seq:    (optional) pulse sequence used (monopolar or bipolar)

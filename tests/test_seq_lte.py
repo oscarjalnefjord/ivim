@@ -3,7 +3,7 @@ import tempfile
 import numpy as np
 from ivim.constants import y
 from ivim.io.base import write_bval, read_cval
-from ivim.seq.sde import calc_b, calc_c, G_from_b, cval_from_bval
+from ivim.seq.lte import calc_b, calc_c, G_from_b, cval_from_bval
 
 # Paths to data
 temp_folder = tempfile.gettempdir()

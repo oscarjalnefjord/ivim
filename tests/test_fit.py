@@ -1,9 +1,9 @@
 import numpy as np
-import os.path
+import os
 import tempfile
 from ivim.models import NO_REGIME, DIFFUSIVE_REGIME, BALLISTIC_REGIME, INTERMEDIATE_REGIME
 from ivim.sim import noise
-from ivim.seq.sde import calc_c, G_from_b, MONOPOLAR, BIPOLAR
+from ivim.seq.lte import calc_c, G_from_b, MONOPOLAR, BIPOLAR
 from ivim.io.base import write_im, read_im, write_bval, write_cval, write_time, write_k
 from ivim.fit import valid_signal, trim_par, neighbours, save_parmaps, nlls, seg, bayes
 
@@ -24,10 +24,9 @@ parmaps = {
             'D': 0.5e-3 + 1e-3 * np.random.rand(sz[0], sz[1], sz[2]),
             'f': 0.15 + 0.1 * np.random.rand(sz[0], sz[1], sz[2]),
             'Dstar': 20e-3 + 20e-3 * np.random.rand(sz[0], sz[1], sz[2]),
-            'vd': 1.5 + 1 * np.random.rand(sz[0], sz[1], sz[2]),
             'K': 2 * np.random.rand(sz[0], sz[1], sz[2]),
             'S0': np.ones(sz),
-            'v': 1.5 + 1.0 * np.random.rand(sz[0], sz[1], sz[2]),
+            'v': 2.5 + 1.0 * np.random.rand(sz[0], sz[1], sz[2]),
             'tau': 0.05 + 0.1 * np.random.rand(sz[0], sz[1], sz[2])
             }
 
@@ -36,12 +35,12 @@ for par, parmap in parmaps.items():
     parmap_files[par] = os.path.join(temp_folder, f'temp_fit_{par}.nii.gz')
     write_im(parmap_files[par], parmap)
 
-b = np.array([0, 10, 20, 50, 100, 200, 400, 800, 1500]).astype(float)
+b = np.array([0, 10, 20, 50, 100, 200, 400, 600, 800, 1500]).astype(float)
 delta = 7.3e-3
 Delta = 7.5e-3
 
 rtol = 0.05
-atol = {'D': 0.1e-3, 'f': 0.01, 'K': 0.1, 'S0': 0.1, 'Dstar': 2e-3, 'vd': 0.1, 'v': 0.1, 'tau': 0.01}
+atol = {'D': 0.1e-3, 'f': 0.01, 'K': 0.1, 'S0': 0.1, 'Dstar': 2e-3, 'v': 0.1, 'tau': 0.01}
 
 def test_nlls_sIVIM():
     bthr = 200
@@ -83,7 +82,7 @@ def test_nlls_diffusive():
 def test_nlls_ballistic():
     for seq in ['monopolar', 'bipolar']:
         for fitK in [True, False]:
-            test_pars = ['D','f','vd','S0']
+            test_pars = ['D','f','v','S0']
             if fitK:
                 test_pars += ['K']
                 K_file = parmap_files['K']
@@ -102,7 +101,7 @@ def test_nlls_ballistic():
             cval_file = bval_file.replace('bval', 'cval')
             write_cval(cval_file, test_c)
 
-            noise(parmap_files['D'], parmap_files['f'], BALLISTIC_REGIME, bval_file, 0, outbase, parmap_files['S0'], K_file = K_file, vd_file = parmap_files['vd'], cval_file = cval_file)
+            noise(parmap_files['D'], parmap_files['f'], BALLISTIC_REGIME, bval_file, 0, outbase, parmap_files['S0'], K_file = K_file, v_file = parmap_files['v'], cval_file = cval_file)
 
             nlls(im_file, bval_file, BALLISTIC_REGIME, roi_file = roi_file, outbase = outbase, fitK = fitK, cval_file = cval_file)
             for test_par in test_pars:
@@ -197,9 +196,9 @@ def test_seg_diffusive():
 def test_seg_ballistic():
     cthr = 0
     for seq in ['monopolar', 'bipolar']:
-        for bthr in [200, 400, b[-1]]:
+        for bthr in [400, 600, b[-1]]:
             for fitK in [True, False]:
-                test_pars = ['D','f','vd','S0']
+                test_pars = ['D','f','v','S0']
                 if fitK:
                     test_pars += ['K']
                     K_file = parmap_files['K']
@@ -218,7 +217,7 @@ def test_seg_ballistic():
                 cval_file = bval_file.replace('bval', 'cval')
                 write_cval(cval_file, test_c)
 
-                noise(parmap_files['D'], parmap_files['f'], BALLISTIC_REGIME, bval_file, 0, outbase, parmap_files['S0'], K_file = K_file, vd_file = parmap_files['vd'], cval_file = cval_file)
+                noise(parmap_files['D'], parmap_files['f'], BALLISTIC_REGIME, bval_file, 0, outbase, parmap_files['S0'], K_file = K_file, v_file = parmap_files['v'], cval_file = cval_file)
 
                 if bthr == b[-1]:
                     np.testing.assert_raises(ValueError, seg, im_file, bval_file, BALLISTIC_REGIME, bthr = bthr, cval_file = cval_file, cthr = cthr, roi_file = roi_file, outbase = outbase, fitK = fitK)
@@ -279,7 +278,7 @@ def test_bayes_ballistic():
         for ctm in ['mean', 'mode']:
             for seq in ['monopolar', 'bipolar']:
                 for fitK in [True, False]:
-                    test_pars = ['D','f','vd','S0']
+                    test_pars = ['D','f','v','S0']
                     if fitK:
                         test_pars += ['K']
                         K_file = parmap_files['K']
@@ -298,7 +297,7 @@ def test_bayes_ballistic():
                     cval_file = bval_file.replace('bval', 'cval')
                     write_cval(cval_file, test_c)
 
-                    noise(parmap_files['D'], parmap_files['f'], BALLISTIC_REGIME, bval_file, 0, outbase, parmap_files['S0'], K_file = K_file, vd_file = parmap_files['vd'], cval_file = cval_file)
+                    noise(parmap_files['D'], parmap_files['f'], BALLISTIC_REGIME, bval_file, 0, outbase, parmap_files['S0'], K_file = K_file, v_file = parmap_files['v'], cval_file = cval_file)
 
                     bayes(im_file, bval_file, BALLISTIC_REGIME, cval_file = cval_file, roi_file = roi_file, outbase = outbase, fitK = fitK, n = mcmc_n, ctm = ctm, spatial_prior = spatial_prior)
                     for test_par in test_pars:

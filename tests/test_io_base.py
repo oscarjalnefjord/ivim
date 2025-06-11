@@ -1,6 +1,6 @@
 import nibabel as nib
 import numpy as np
-import os.path
+import os
 import tempfile
 from ivim.io.base import (data_from_file, file_from_data, 
                           read_im, read_bval, read_cval, read_bvec, 

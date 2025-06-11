@@ -1,6 +1,6 @@
 import numpy as np
 from ivim.constants import y
-from ivim.seq.sde import calc_b, calc_c
+from ivim.seq.lte import calc_b, calc_c
 from ivim.seq.fwf import (q_from_g, 
                           B_from_q, b_from_q, C_from_q, c_from_q,
                           B_from_g, b_from_g, C_from_g, c_from_g,

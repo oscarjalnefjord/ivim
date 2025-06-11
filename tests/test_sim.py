@@ -3,7 +3,7 @@ import os
 import tempfile
 from ivim.models import sIVIM, diffusive, ballistic, intermediate, NO_REGIME, DIFFUSIVE_REGIME, BALLISTIC_REGIME, INTERMEDIATE_REGIME
 from ivim.sim import noise, langevin
-from ivim.seq.sde import MONOPOLAR, BIPOLAR
+from ivim.seq.lte import MONOPOLAR, BIPOLAR
 from ivim.io.base import read_im, write_im, write_bval, write_cval, write_time, write_k
 
 # Paths to data
@@ -116,3 +116,6 @@ def test_langevin():
                         if n_test > 1000:
                             for i in range(3):
                                 np.testing.assert_approx_equal(np.std(v[:,-1,i]),sigma_v,2)
+
+
+test_noise()

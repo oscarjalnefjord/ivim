@@ -8,7 +8,7 @@ The `ivim` python package provides functionality for the main steps associated w
 - Methods for IVIM parameter estimation / model fitting
 - Simulation of MRI data based on IVIM models
 - Optimization of b-values 
-- Preprocessing, both basic operation like extracting image data with a specific b-value or averaging of diffusion encoding directions, and specific methods like correction for signal drift
+- Preprocessing, both basic operations like extracting image data with a specific b-value or averaging of diffusion encoding directions, and specific methods like correction for signal drift
 
 The file formats used are the ones used by [FSL](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FSL), i.e. .nii.gz for image data, .bval for b-values and .bvec for diffusion encoding directions. File with ending .cval is also used for c-values in analogy to .bval for b-values to describe flow encoding.
 

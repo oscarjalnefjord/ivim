@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.abspath(".."))
 # -- Project information
 
 project = 'ivim'
-copyright = '2023, Oscar Jalnefjord'
+copyright = '2025, Oscar Jalnefjord'
 author = 'Oscar Jalnefjord'
 
 release = '1.0'
@@ -23,6 +23,7 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
     'sphinx.ext.napoleon',
+    'sphinx_copybutton',
     'nbsphinx'
 ]
 

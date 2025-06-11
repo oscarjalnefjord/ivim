@@ -4,7 +4,7 @@ import numpy as np
 import numpy.typing as npt
 from ivim.models import sIVIM, diffusive, ballistic, intermediate, check_regime, DIFFUSIVE_REGIME, BALLISTIC_REGIME, INTERMEDIATE_REGIME
 from ivim.io.base import write_im, read_im, read_bval, read_cval, write_bval, write_cval, read_time, read_k, write_time, write_k
-from ivim.seq.sde import MONOPOLAR, BIPOLAR
+from ivim.seq.lte import MONOPOLAR, BIPOLAR
 
 def noise(D_file: str, f_file: str, regime: str, bval_file: str, 
           noise_sigma: float, outbase: str, S0_file: str | None = None, 
@@ -32,6 +32,7 @@ def noise(D_file: str, f_file: str, regime: str, bval_file: str,
         delta_file:  (optional) path to .delta file
         Delta_file:  (optional) path to .Delta file
         T_file:      (optional) path to .T file
+        seq:         (optional) pulse sequence used (monopolar or bipolar)
         k_file:      (optional) path to .k file
     """
 
@@ -92,11 +93,11 @@ def noise(D_file: str, f_file: str, regime: str, bval_file: str,
     if Y.ndim > 4:
         raise ValueError('No support for 5D data and above.')
     elif Y.ndim == 3:
-        Y[..., np.newaxis]
+        Y = Y[:, :, np.newaxis, :]
     elif Y.ndim == 2:
-        Y[..., np.newaxis, np.newaxis]
-    else:
-        Y[:, np.newaxis, np.newaxis, np.newaxis]
+        Y = Y[:, np.newaxis, np.newaxis, :]
+    elif Y.ndim == 1:
+        Y = Y[np.newaxis, np.newaxis, np.newaxis, :]
     sz = np.ones(4, dtype=int)    
     sz[:Y.ndim] = np.array(Y.shape)
     n1 = noise_sigma * np.random.randn(sz[0], sz[1], sz[2], sz[3])
@@ -130,12 +131,19 @@ def langevin(sigma_v: float,tau: float, dt: float, m: int, n: int = 100) -> npt.
     Arguments:
                 sigma_v:  standard deviation of the velocities
                 tau:      correlation time
-                dt:       time step (should be substantially larger than tau)
+                dt:       time step (should be substantially smaller than tau)
                 m:        number of time steps
-                n:        number of random walkers
+                n:        (optional) number of random walkers
 
     Output:
                 v:        velocities of the walkers (nxmx3 array)
+
+
+    Examples:
+    ---------
+    >>> sigma_v, tau, dt, m = 2, 100e-3, 1e-3, 1e3
+    >>> v = langevin(sigma_v, tau, dt, m, n = 100)
+    
     """
 
     v = np.zeros((n,m,3))
@@ -143,3 +151,5 @@ def langevin(sigma_v: float,tau: float, dt: float, m: int, n: int = 100) -> npt.
     for i in range(1,m):
         v[:,i,:] = v[:,i-1,:]*(1-dt/tau) + np.sqrt(2*sigma_v**2/tau)*np.random.randn(n,3)*np.sqrt(dt)
     return v
+
+

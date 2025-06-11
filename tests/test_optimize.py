@@ -1,6 +1,6 @@
 import numpy as np
 from ivim.models import NO_REGIME, DIFFUSIVE_REGIME, BALLISTIC_REGIME, INTERMEDIATE_REGIME
-from ivim.seq.sde import MONOPOLAR, BIPOLAR
+from ivim.seq.lte import MONOPOLAR, BIPOLAR
 from ivim.optimize import crlb
 
 D = np.array([0.5e-3, 1e-3, 1.5e-3])
