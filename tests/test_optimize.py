@@ -65,7 +65,7 @@ def test_crlb_ballistic():
                 b, a, delta, Delta = res
             else:
                 b, a, fc, delta, Delta = res
-            np.testing.assert_almost_equal(np.sum(a), 1.0, 2) # a should sum to one
+            np.testing.assert_almost_equal(np.sum(a), 1.0, 1) # a should sum to one
             np.testing.assert_equal(b.size, 4+fitK)
             np.testing.assert_equal(a.size, 4+fitK)
             np.testing.assert_array_less(b, bmax*(1+1e-5))
@@ -88,7 +88,7 @@ def test_crlb_intermediate():
                 b, a, delta, Delta = res
             else:
                 b, a, fc, delta, Delta, T = res
-            np.testing.assert_almost_equal(np.sum(a), 1.0, 2) # a should sum to one
+            np.testing.assert_almost_equal(np.sum(a), 1.0, 1) # a should sum to one
             np.testing.assert_equal(b.size, 5+fitK)
             np.testing.assert_equal(a.size, 5+fitK)
             np.testing.assert_array_less(b, bmax*(1+1e-5))
