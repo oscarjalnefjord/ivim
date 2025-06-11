@@ -22,8 +22,8 @@ write_im(roi_file, np.ones(sz))
 
 outbase = os.path.join(temp_folder, 'test')
 
-rtol = 1e-2
-atol = 1e-2
+rtol = 5e-2
+atol = 0
 
 def test_temporal():
     for order in [1, 2, 3]:
