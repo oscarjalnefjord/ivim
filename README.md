@@ -15,31 +15,18 @@ The file formats used are the ones used by [FSL](https://fsl.fmrib.ox.ac.uk/fsl/
 ## Dependencies
 The `ivim` python package relies heavly on numpy for numerical operations, uses nibabel for reading and writing nifti file, and uses scipy for some specific minimization/optimization tasks. A python version >= 3.10 is required.
 
-The correction for susceptibility and eddy current induced distorsions wraps FSL functionality, thus requiring [FSL](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FSL) to be installed.
-
 ## How to install
-The suggested way to install is to first prepare an environment suitable for the `ivim` package using e.g. conda with a compatible python version (>= 3.10):
+The suggested way to install is to first prepare an environment suitable for the `ivim` package using e.g. venv with a compatible python version (>= 3.10):
 
-    conda create -n ivim python == 3.10
+    python3 -m venv .ivim
 
-Activate the environment and install the prerequisities:
+Activate the environment:
 
-    conda activate ivim
-    conda install -c anaconda -c conda-forge nibabel scipy numpy
-
-Download the package with:
-
-    git clone https://github.com/oscarjalnefjord/ivim.git
+    source .ivim/bin/activate 
 
 To install the package, run:
 
-    pip install -e ivim
-
-If you are not in the directory of the repository, run:
-
-    pip install -e /path/to/ivim
-
-where `/path/to/ivim` points to the directory of the repository.
+    python3 -m pip install ivim-mri
 
 ## References
 The following work describe some of the algorithms implemented in the package.

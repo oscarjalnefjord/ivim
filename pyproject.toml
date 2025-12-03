@@ -3,8 +3,8 @@ requires = ["hatchling >= 1.26"]
 build-backend = "hatchling.build"
 
 [project]
-name = "ivim"
-version = "1.0.0"
+name = "ivim-mri"
+version = "1.0.1"
 description = "Tools related to Intravoxel Incoherent Motion (IVIM) modeling of diffusion MRI data"
 readme = "README.md"
 authors = [
@@ -48,3 +48,6 @@ omit = [
 
 [tool.setuptools.packages.find]
 where = [ "ivim",]
+
+[tool.hatch.build.targets.wheel]
+packages = ["ivim"]
