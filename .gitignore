@@ -6,3 +6,4 @@ ivim.egg-info
 .vscode
 dev/
 build/
+dist/

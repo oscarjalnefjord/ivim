@@ -203,6 +203,7 @@ def write_im(filename: str, im: npt.NDArray[np.float64], imref_file: str | None 
     if imref_file is not None:
         nii_ref = nib.load(imref_file)
         nii = nib.Nifti1Image(im, affine=nii_ref.affine, header=nii_ref.header)
+        nii.set_data_dtype(im.dtype)
     else:
         nii = nib.Nifti1Image(im, affine=np.eye(4))
     nib.save(nii, filename)

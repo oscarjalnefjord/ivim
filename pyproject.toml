@@ -1,3 +1,7 @@
+[build-system]
+requires = ["hatchling >= 1.26"]
+build-backend = "hatchling.build"
+
 [project]
 name = "ivim"
 version = "1.0.0"
@@ -12,7 +16,6 @@ classifiers = [
             "Intended Audience :: Science/Research", 
             "Topic :: Scientific/Engineering", 
             "Operating System :: OS Independent", 
-            "License :: OSI Approved :: BSD-3-Clause License", 
             "Programming Language :: Python", 
             "Programming Language :: Python :: 3",
             ]
